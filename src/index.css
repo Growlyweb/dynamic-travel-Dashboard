@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — sampled from the reference design */
+  --color-primary: #1565c0; /* primary blue */
+  --color-primary-dark: #0d47a1; /* deep blue */
+  --color-primary-light: #eaf2fc; /* light blue tint */
+  --color-accent: #f7941d; /* orange CTA */
+  --color-accent-dark: #f97316; /* orange gradient end */
+  --color-navy: #1a2b4c; /* headings */
+  --color-body: #637083; /* body copy */
+  --color-tint: #f2f7fd; /* section background */
+
+  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-script: "Great Vibes", cursive;
+
+  --shadow-card: 0 6px 24px -8px rgb(13 71 161 / 0.16);
+  --shadow-widget: 0 24px 48px -16px rgb(13 71 161 / 0.28);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-navy);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* hide scrollbars on horizontal carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
