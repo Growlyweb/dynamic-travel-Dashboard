@@ -136,7 +136,7 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
 
       {/* Status Filter Tabs / Status Bar */}
       <div className="border-b border-slate-200">
-        <div className="flex items-center gap-4 sm:gap-8 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-4 sm:gap-8 overflow-x-auto no-scrollbar scroll-smooth">
           {APPLICATION_STATUS_TABS.map((tab) => {
             const isActive = activeStatusTab === tab.id
             return (
@@ -146,7 +146,7 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
                   setActiveStatusTab(tab.id)
                   setCurrentPage(1)
                 }}
-                className={`relative pb-3.5 flex items-center gap-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap cursor-pointer ${
+                className={`shrink-0 relative pb-3.5 flex items-center gap-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'text-[#0066cc] font-semibold'
                     : 'text-slate-600 hover:text-slate-900'

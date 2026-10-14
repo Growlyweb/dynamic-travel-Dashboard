@@ -5,10 +5,10 @@ export default function CommissionReportModal({ isOpen, onClose }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="bg-[#0d2b59] px-6 py-4 flex items-center justify-between text-white">
+        <div className="bg-[#0d2b59] px-5 sm:px-6 py-4 flex items-center justify-between text-white shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
               <BarChart2 className="w-4 h-4 text-white" />
@@ -27,8 +27,8 @@ export default function CommissionReportModal({ isOpen, onClose }) {
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5">
-          <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="p-4 sm:p-6 space-y-5 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
             <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-3">
               <span className="text-[11px] text-blue-700 block">Total Revenue Generated</span>
               <h4 className="text-xl font-bold text-blue-900 mt-1">$28,450.00</h4>

@@ -145,7 +145,7 @@ export default function Header({ onTabChange, activeTab }) {
 
 
               {searchOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-xl border border-slate-100 p-3 z-50 animate-fade-in">
+                <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-xl shadow-xl border border-slate-100 p-3 z-50 animate-fade-in">
                   <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-[#0066cc]">
                     <Search className="w-4 h-4 text-slate-400 shrink-0" />
                     <input
@@ -162,7 +162,7 @@ export default function Header({ onTabChange, activeTab }) {
             </div>
 
             {/* Notification Bell */}
-            <div className="relative" ref={notifRef}>
+            <div className="relative shrink-0" ref={notifRef}>
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
                 className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-slate-600 hover:text-[#0066cc] hover:bg-slate-100 transition-colors cursor-pointer"
@@ -176,7 +176,7 @@ export default function Header({ onTabChange, activeTab }) {
 
               {/* Notifications Dropdown */}
               {notificationsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-50 animate-fade-in">
+                <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-50 animate-fade-in">
                   <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-slate-800 text-sm">Notifications</span>
@@ -184,6 +184,7 @@ export default function Header({ onTabChange, activeTab }) {
                     </div>
                     <button className="text-xs text-[#0066cc] hover:underline font-medium">Mark all read</button>
                   </div>
+
                   <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
                     {notifications.map((n) => {
                       const Icon = n.icon

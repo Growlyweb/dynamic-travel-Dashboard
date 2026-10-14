@@ -27,38 +27,38 @@ export default function ApplicationDetailModal({ application, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="bg-[#0d2b59] px-6 py-4 flex items-center justify-between text-white shrink-0">
+        <div className="bg-[#0d2b59] px-5 sm:px-6 py-4 flex items-center justify-between text-white shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
               <CountryFlag countryCode={application.countryCode} countryName={application.country} className="w-6 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">{application.applicantName}</h3>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/20 text-white`}>
+                <h3 className="text-sm sm:text-base font-bold text-white">{application.applicantName}</h3>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/20 text-white`}>
                   {application.status}
                 </span>
               </div>
-              <p className="text-xs text-white/70">
+              <p className="text-[11px] sm:text-xs text-white/70">
                 {application.country} • {application.applicationType} • Ref: {application.appRef}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Scrollable Body */}
-        <div className="p-6 space-y-6 overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto">
           {/* Key Metric Summary */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
               <span className="text-[11px] text-slate-500 block">Passport Number</span>
               <div className="flex items-center gap-1.5 mt-0.5">

@@ -60,16 +60,16 @@ export default function HeroBanner({ activeTab }) {
       <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
 
       {/* Banner Content Container */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-14 h-full flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 lg:py-14 pb-10 sm:pb-12 lg:pb-14 h-full flex flex-col md:flex-row md:items-center justify-between gap-6">
         {/* Left Side: Partner Profile Card */}
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-3.5 sm:gap-6">
           {/* Avatar Circle: Large White Circle with Bold Navy AR */}
           <div className="relative shrink-0">
-            <div className="w-18 h-18 sm:w-22 sm:h-22 rounded-full bg-white text-[#0d2b59] font-black text-2xl sm:text-3xl flex items-center justify-center shadow-2xl ring-4 ring-white/30 tracking-tight">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-22 lg:h-22 rounded-full bg-white text-[#0d2b59] font-black text-xl sm:text-2xl lg:text-3xl flex items-center justify-center shadow-2xl ring-3 sm:ring-4 ring-white/30 tracking-tight">
               {PARTNER_INFO.initials}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-xs">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white animate-pulse" />
             </div>
           </div>
 

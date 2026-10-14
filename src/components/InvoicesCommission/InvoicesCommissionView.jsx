@@ -424,7 +424,7 @@ export default function InvoicesCommissionView({
             </div>
 
             {/* Donut Chart & Legend Row */}
-            <div className="flex items-center justify-between gap-4 py-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
               {/* Donut Chart SVG */}
               <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
                 <svg className="w-36 h-36 -rotate-90" viewBox="0 0 140 140">

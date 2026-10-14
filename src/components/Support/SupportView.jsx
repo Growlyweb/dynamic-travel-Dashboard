@@ -72,9 +72,9 @@ export default function SupportView() {
         {/* Left Column: Account Manager Card & FAQs (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* Account Manager Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-5">
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#0066cc] to-[#0d2b59] text-white font-bold text-lg flex items-center justify-center shadow-md">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#0066cc] to-[#0d2b59] text-white font-bold text-lg flex items-center justify-center shadow-md shrink-0">
                 AM
               </div>
               <div>
@@ -112,7 +112,7 @@ export default function SupportView() {
           </div>
 
           {/* FAQs */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-4">
             <div className="flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-[#0066cc]" />
               <h4 className="text-sm font-bold text-slate-800">Frequently Asked Partner Questions</h4>
