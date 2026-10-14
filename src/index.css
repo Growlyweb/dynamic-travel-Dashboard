@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand palette — sampled from the reference design */
+  /* Brand palette - sampled from the reference design */
   --color-primary: #1565c0; /* primary blue */
   --color-primary-dark: #0d47a1; /* deep blue */
   --color-primary-light: #eaf2fc; /* light blue tint */

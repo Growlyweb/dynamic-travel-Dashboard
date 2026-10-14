@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   server: {
+    // WSL gets no file change events from Windows drives (/mnt/e), so hot reload serves stale modules
+    watch: process.env.WSL_DISTRO_NAME ? { usePolling: true, interval: 300 } : undefined,
     allowedHosts: [
       'maybe-robin-phoenix-mailing.trycloudflare.com',
     ],
