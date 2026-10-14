@@ -19,7 +19,6 @@ export default function App() {
         <VisaSection />
         <TourPackages />
         <ServicesSection />
-        <BangladeshSection />
       </main>
       <Footer />
     </div>
