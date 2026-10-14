@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Download,
   ExternalLink,
+  Layers,
 } from 'lucide-react'
 import CountryFlag from '../common/CountryFlag'
 import { APPLICATION_STATUS_TABS, APPLICATIONS_DATA } from '../../data/applicationsData'
@@ -73,37 +74,79 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
     setCurrentPage(1)
   }
 
-  // Render Status Icon for filter tabs
-  const renderStatusIcon = (tab) => {
+  // Render Status Icon for filter tabs (Card type with rounded rectangular)
+  const renderStatusIcon = (tab, isActive = false) => {
     switch (tab.id) {
+      case 'all':
+        return (
+          <span
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
+              isActive
+                ? 'bg-blue-50 border-blue-300 text-[#0066cc] shadow-xs ring-2 ring-blue-500/15'
+                : 'bg-slate-50 border-slate-200/90 text-slate-500 group-hover:bg-white group-hover:border-slate-300 group-hover:shadow-2xs'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#0066cc]" />
+          </span>
+        )
       case 'processing':
         return (
-          <span className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <Clock className="w-3 h-3 text-amber-600" />
+          <span
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
+              isActive
+                ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-xs ring-2 ring-amber-500/15'
+                : 'bg-amber-50/70 border-amber-200/80 text-amber-600 group-hover:bg-amber-100/60 group-hover:border-amber-300 group-hover:shadow-2xs'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
           </span>
         )
       case 'approved':
         return (
-          <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          <span
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
+              isActive
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-xs ring-2 ring-emerald-500/15'
+                : 'bg-emerald-50/70 border-emerald-200/80 text-emerald-600 group-hover:bg-emerald-100/60 group-hover:border-emerald-300 group-hover:shadow-2xs'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
           </span>
         )
       case 'on_hold':
         return (
-          <span className="w-5 h-5 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
-            <Ban className="w-3 h-3 text-rose-600" />
+          <span
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
+              isActive
+                ? 'bg-rose-50 border-rose-300 text-rose-700 shadow-xs ring-2 ring-rose-500/15'
+                : 'bg-rose-50/70 border-rose-200/80 text-rose-600 group-hover:bg-rose-100/60 group-hover:border-rose-300 group-hover:shadow-2xs'
+            }`}
+          >
+            <Ban className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-600" />
           </span>
         )
       case 'document_review':
         return (
-          <span className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-            <FileText className="w-3 h-3 text-purple-600" />
+          <span
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
+              isActive
+                ? 'bg-purple-50 border-purple-300 text-purple-700 shadow-xs ring-2 ring-purple-500/15'
+                : 'bg-purple-50/70 border-purple-200/80 text-purple-600 group-hover:bg-purple-100/60 group-hover:border-purple-300 group-hover:shadow-2xs'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600" />
           </span>
         )
       case 'rejected':
         return (
-          <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <XCircle className="w-3 h-3 text-red-600" />
+          <span
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
+              isActive
+                ? 'bg-red-50 border-red-300 text-red-700 shadow-xs ring-2 ring-red-500/15'
+                : 'bg-red-50/70 border-red-200/80 text-red-600 group-hover:bg-red-100/60 group-hover:border-red-300 group-hover:shadow-2xs'
+            }`}
+          >
+            <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
           </span>
         )
       default:
@@ -136,7 +179,7 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
 
       {/* Status Filter Tabs / Status Bar */}
       <div className="border-b border-slate-200">
-        <div className="flex items-center gap-4 sm:gap-8 overflow-x-auto no-scrollbar scroll-smooth">
+        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth">
           {APPLICATION_STATUS_TABS.map((tab) => {
             const isActive = activeStatusTab === tab.id
             return (
@@ -146,21 +189,21 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
                   setActiveStatusTab(tab.id)
                   setCurrentPage(1)
                 }}
-                className={`shrink-0 relative pb-3.5 flex items-center gap-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap cursor-pointer ${
+                className={`group shrink-0 relative pb-3 flex items-center gap-2 sm:gap-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap cursor-pointer select-none ${
                   isActive
-                    ? 'text-[#0066cc] font-semibold'
+                    ? 'text-[#0066cc] font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {renderStatusIcon(tab)}
+                {renderStatusIcon(tab, isActive)}
                 <span>{tab.label}</span>
 
-                {/* Badge Count */}
+                {/* Badge Count in rounded rectangular pill */}
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-colors ${
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-colors ${
                     isActive
-                      ? 'bg-blue-50 text-[#0066cc]'
-                      : 'bg-slate-100 text-slate-600'
+                      ? 'bg-blue-100/90 text-[#0066cc]'
+                      : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/70'
                   }`}
                 >
                   {tab.count}
@@ -168,7 +211,7 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
 
                 {/* Active Underline Indicator */}
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#0066cc] rounded-t-full" />
+                  <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#0066cc] rounded-t-full shadow-xs" />
                 )}
               </button>
             )
