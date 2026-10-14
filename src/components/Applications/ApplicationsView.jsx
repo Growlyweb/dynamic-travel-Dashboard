@@ -74,79 +74,110 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
     setCurrentPage(1)
   }
 
+  // Status tab card styling configs with distinct backgrounds for all 6 statuses
+  const STATUS_TAB_STYLES = {
+    all: {
+      inactive: 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 shadow-2xs hover:border-slate-300',
+      active: 'bg-[#0d2b59] text-white border-[#0d2b59] shadow-md shadow-[#0d2b59]/25 ring-2 ring-[#0d2b59]/20 font-bold',
+      iconInactive: 'bg-blue-50 border-blue-200/70 text-[#0066cc]',
+      iconActive: 'bg-white/15 border-white/25 text-white',
+      countInactive: 'bg-slate-100 text-slate-700',
+      countActive: 'bg-white/20 text-white',
+    },
+    processing: {
+      inactive: 'bg-amber-50/80 hover:bg-amber-100/70 text-amber-900 border-amber-200/80 shadow-2xs hover:border-amber-300',
+      active: 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/25 ring-2 ring-amber-500/20 font-bold',
+      iconInactive: 'bg-white/90 border-amber-200/90 text-amber-600',
+      iconActive: 'bg-white/20 border-white/30 text-white',
+      countInactive: 'bg-amber-100 text-amber-800',
+      countActive: 'bg-white/20 text-white',
+    },
+    approved: {
+      inactive: 'bg-emerald-50/80 hover:bg-emerald-100/70 text-emerald-900 border-emerald-200/80 shadow-2xs hover:border-emerald-300',
+      active: 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/25 ring-2 ring-emerald-600/20 font-bold',
+      iconInactive: 'bg-white/90 border-emerald-200/90 text-emerald-600',
+      iconActive: 'bg-white/20 border-white/30 text-white',
+      countInactive: 'bg-emerald-100 text-emerald-800',
+      countActive: 'bg-white/20 text-white',
+    },
+    on_hold: {
+      inactive: 'bg-rose-50/80 hover:bg-rose-100/70 text-rose-900 border-rose-200/80 shadow-2xs hover:border-rose-300',
+      active: 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/25 ring-2 ring-rose-600/20 font-bold',
+      iconInactive: 'bg-white/90 border-rose-200/90 text-rose-600',
+      iconActive: 'bg-white/20 border-white/30 text-white',
+      countInactive: 'bg-rose-100 text-rose-800',
+      countActive: 'bg-white/20 text-white',
+    },
+    document_review: {
+      inactive: 'bg-purple-50/80 hover:bg-purple-100/70 text-purple-900 border-purple-200/80 shadow-2xs hover:border-purple-300',
+      active: 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/25 ring-2 ring-purple-600/20 font-bold',
+      iconInactive: 'bg-white/90 border-purple-200/90 text-purple-600',
+      iconActive: 'bg-white/20 border-white/30 text-white',
+      countInactive: 'bg-purple-100 text-purple-800',
+      countActive: 'bg-white/20 text-white',
+    },
+    rejected: {
+      inactive: 'bg-red-50/80 hover:bg-red-100/70 text-red-900 border-red-200/80 shadow-2xs hover:border-red-300',
+      active: 'bg-red-600 text-white border-red-600 shadow-md shadow-red-600/25 ring-2 ring-red-600/20 font-bold',
+      iconInactive: 'bg-white/90 border-red-200/90 text-red-600',
+      iconActive: 'bg-white/20 border-white/30 text-white',
+      countInactive: 'bg-red-100 text-red-800',
+      countActive: 'bg-white/20 text-white',
+    },
+  }
+
   // Render Status Icon for filter tabs (Card type with rounded rectangular)
   const renderStatusIcon = (tab, isActive = false) => {
+    const style = STATUS_TAB_STYLES[tab.id] || STATUS_TAB_STYLES.all
+    const iconClass = isActive ? style.iconActive : style.iconInactive
+
     switch (tab.id) {
       case 'all':
         return (
           <span
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
-              isActive
-                ? 'bg-blue-50 border-blue-300 text-[#0066cc] shadow-xs ring-2 ring-blue-500/15'
-                : 'bg-slate-50 border-slate-200/90 text-slate-500 group-hover:bg-white group-hover:border-slate-300 group-hover:shadow-2xs'
-            }`}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs ${iconClass}`}
           >
-            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#0066cc]" />
+            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </span>
         )
       case 'processing':
         return (
           <span
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
-              isActive
-                ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-xs ring-2 ring-amber-500/15'
-                : 'bg-amber-50/70 border-amber-200/80 text-amber-600 group-hover:bg-amber-100/60 group-hover:border-amber-300 group-hover:shadow-2xs'
-            }`}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs ${iconClass}`}
           >
-            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </span>
         )
       case 'approved':
         return (
           <span
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
-              isActive
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-xs ring-2 ring-emerald-500/15'
-                : 'bg-emerald-50/70 border-emerald-200/80 text-emerald-600 group-hover:bg-emerald-100/60 group-hover:border-emerald-300 group-hover:shadow-2xs'
-            }`}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs ${iconClass}`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </span>
         )
       case 'on_hold':
         return (
           <span
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
-              isActive
-                ? 'bg-rose-50 border-rose-300 text-rose-700 shadow-xs ring-2 ring-rose-500/15'
-                : 'bg-rose-50/70 border-rose-200/80 text-rose-600 group-hover:bg-rose-100/60 group-hover:border-rose-300 group-hover:shadow-2xs'
-            }`}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs ${iconClass}`}
           >
-            <Ban className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-600" />
+            <Ban className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </span>
         )
       case 'document_review':
         return (
           <span
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
-              isActive
-                ? 'bg-purple-50 border-purple-300 text-purple-700 shadow-xs ring-2 ring-purple-500/15'
-                : 'bg-purple-50/70 border-purple-200/80 text-purple-600 group-hover:bg-purple-100/60 group-hover:border-purple-300 group-hover:shadow-2xs'
-            }`}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs ${iconClass}`}
           >
-            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600" />
+            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </span>
         )
       case 'rejected':
         return (
           <span
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 ${
-              isActive
-                ? 'bg-red-50 border-red-300 text-red-700 shadow-xs ring-2 ring-red-500/15'
-                : 'bg-red-50/70 border-red-200/80 text-red-600 group-hover:bg-red-100/60 group-hover:border-red-300 group-hover:shadow-2xs'
-            }`}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 shadow-2xs ${iconClass}`}
           >
-            <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
+            <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </span>
         )
       default:
@@ -177,11 +208,13 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
         </button>
       </div>
 
-      {/* Status Filter Tabs / Status Bar */}
-      <div className="border-b border-slate-200">
-        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth">
+      {/* Status Filter Tabs / Status Cards with Custom Backgrounds */}
+      <div className="overflow-x-auto no-scrollbar scroll-smooth py-1">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           {APPLICATION_STATUS_TABS.map((tab) => {
             const isActive = activeStatusTab === tab.id
+            const style = STATUS_TAB_STYLES[tab.id] || STATUS_TAB_STYLES.all
+
             return (
               <button
                 key={tab.id}
@@ -189,10 +222,8 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
                   setActiveStatusTab(tab.id)
                   setCurrentPage(1)
                 }}
-                className={`group shrink-0 relative pb-3 flex items-center gap-2 sm:gap-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap cursor-pointer select-none ${
-                  isActive
-                    ? 'text-[#0066cc] font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`group shrink-0 flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all duration-200 whitespace-nowrap cursor-pointer select-none text-xs sm:text-sm font-semibold ${
+                  isActive ? style.active : style.inactive
                 }`}
               >
                 {renderStatusIcon(tab, isActive)}
@@ -200,19 +231,12 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
 
                 {/* Badge Count in rounded rectangular pill */}
                 <span
-                  className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-colors ${
-                    isActive
-                      ? 'bg-blue-100/90 text-[#0066cc]'
-                      : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/70'
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all ${
+                    isActive ? style.countActive : style.countInactive
                   }`}
                 >
                   {tab.count}
                 </span>
-
-                {/* Active Underline Indicator */}
-                {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#0066cc] rounded-t-full shadow-xs" />
-                )}
               </button>
             )
           })}
