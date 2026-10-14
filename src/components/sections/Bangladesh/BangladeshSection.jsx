@@ -1,5 +1,5 @@
 import { ArrowRight, CalendarClock, Trophy, Users } from 'lucide-react'
-import { IMAGES, STATS } from '../data/site'
+import { IMAGES, STATS } from '@/constants'
 
 const ICONS = { Users, Trophy, CalendarClock }
 

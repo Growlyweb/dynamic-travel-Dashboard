@@ -3,19 +3,19 @@ import {
   Globe,
   LogIn,
   Menu,
-  Plane,
   Search,
   X,
 } from 'lucide-react'
-import { NAV_LINKS } from '../data/site'
+import { NAV_LINKS } from '@/constants'
 
 function Logo() {
   return (
-    <a href="#home" className="flex shrink-0 items-center gap-2.5">
-      <span className="relative flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-md shadow-primary/30">
-        <Plane className="size-5 text-white" strokeWidth={2.2} />
-        <span className="absolute -right-1 -top-1 size-2.5 rounded-full bg-accent ring-2 ring-white" />
-      </span>
+    <a href="#home" className="group flex shrink-0 items-center gap-2.5">
+      <img
+        src="/company_logo.png"
+        alt="ABL Travels Logo"
+        className="size-11 rounded-xl object-contain ring-1 ring-slate-100 shadow-sm transition-transform duration-200 group-hover:scale-105"
+      />
 
       <span className="leading-none">
         <span className="block text-lg font-extrabold tracking-tight text-navy">

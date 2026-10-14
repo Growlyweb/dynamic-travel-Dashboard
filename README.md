@@ -1,16 +1,121 @@
-# React + Vite
+# ABL Travels — Storefront Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A modern, high-performance web storefront built with **React 19**, **Vite**, and **Tailwind CSS v4**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📁 Professional Architecture & File Structure
 
-## React Compiler
+The project has been refactored into a scalable, domain-driven structure adhering to modern React and enterprise standards:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```text
+Frontend/
+├── public/                     # Static assets served as-is (images, favicon)
+│   ├── favicon.svg
+│   └── images/                 # Optimized webp/png background & hero assets
+├── src/
+│   ├── assets/                 # SVGs and bundled local assets
+│   ├── components/
+│   │   ├── common/             # Reusable, standalone UI elements & SVGs
+│   │   │   ├── PagodaIllustration.jsx
+│   │   │   └── index.js
+│   │   ├── layout/             # Global layout containers and chrome
+│   │   │   ├── Header/         # Responsive navigation & mobile menu
+│   │   │   │   ├── Header.jsx
+│   │   │   │   └── index.js
+│   │   │   ├── Footer/         # Complete footer with brand, links & accreditation
+│   │   │   │   ├── Footer.jsx
+│   │   │   │   ├── NewsletterBanner.jsx
+│   │   │   │   ├── PartnersBar.jsx
+│   │   │   │   └── index.js
+│   │   │   └── index.js
+│   │   ├── sections/           # Dedicated, modular landing page sections
+│   │   │   ├── Hero/           # Dynamic carousel hero & search bar
+│   │   │   │   ├── Hero.jsx
+│   │   │   │   ├── SearchWidget.jsx
+│   │   │   │   └── index.js
+│   │   │   ├── Features/       # Trust points and key features strip
+│   │   │   │   ├── FeaturesBar.jsx
+│   │   │   │   └── index.js
+│   │   │   ├── Visa/           # China visa highlight section
+│   │   │   │   ├── VisaSection.jsx
+│   │   │   │   └── index.js
+│   │   │   ├── TourPackages/   # Interactive tour carousel cards
+│   │   │   │   ├── TourPackages.jsx
+│   │   │   │   └── index.js
+│   │   │   ├── Services/       # All services & Bangladesh highlight
+│   │   │   │   ├── ServicesSection.jsx
+│   │   │   │   └── index.js
+│   │   │   ├── Bangladesh/     # Standalone showcase section
+│   │   │   │   ├── BangladeshSection.jsx
+│   │   │   │   └── index.js
+│   │   │   └── index.js
+│   │   └── index.js            # Master barrel export for components
+│   ├── constants/              # Centralized domain data, navigation & copy
+│   │   ├── destinations.js     # Top destinations & slide definitions
+│   │   ├── navigation.js       # Header links, footer links, social links
+│   │   ├── services.js         # Service catalog, badges, stats & features
+│   │   └── index.js
+│   ├── hooks/                  # Custom reusable React hooks
+│   │   ├── useCarousel.js      # Carousel state & autoplay engine
+│   │   └── index.js
+│   ├── pages/                  # Routed views / Page layer
+│   │   ├── HomePage.jsx        # Landing page composition
+│   │   └── index.js
+│   ├── utils/                  # Helper utilities (cn, slugify)
+│   │   └── index.js
+│   ├── App.jsx                 # Application root orchestrator
+│   ├── index.css               # Design tokens, theme variables & Tailwind
+│   └── main.jsx                # DOM mount entry point
+├── jsconfig.json               # Absolute import resolution (@/* -> src/*)
+├── package.json
+└── vite.config.js              # Vite configuration with path aliases
+```
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## ⚡ Path Aliases
+
+Path alias `@` is configured to resolve directly to `src/`.
+
+Instead of relative chains like `../../data/site`:
+```javascript
+// Clean & maintainable
+import { Header, Footer } from '@/components/layout'
+import { DESTINATIONS } from '@/constants'
+import { useCarousel } from '@/hooks'
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Start Development Server
+```bash
+npm run dev
+```
+
+### 3. Run Static Code Analysis (Oxlint)
+```bash
+npm run lint
+```
+
+### 4. Build for Production
+```bash
+npm run build
+```
+
+---
+
+## 🛠 Tech Stack
+
+- **Framework**: React 19
+- **Build Tool**: Vite 8
+- **Styling**: Tailwind CSS v4 (`@tailwindcss/vite`)
+- **Icons**: Lucide React
+- **Linter**: Oxlint

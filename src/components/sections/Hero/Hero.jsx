@@ -1,48 +1,16 @@
-import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react'
-
-const HERO_SLIDES = [
-  {
-    label: 'China Visa',
-    image: '/images/hero-china.webp',
-    eyebrow: 'Discover',
-    title: 'China & Beyond',
-    description:
-      'Your trusted travel partner for China visa processing, international tours and unforgettable travel experiences.',
-    href: '/visa/china',
-  },
-  {
-    label: 'Tour Packages',
-    image: '/images/hero-beach.webp',
-    eyebrow: 'Explore',
-    title: 'Journeys That Inspire',
-    description:
-      'Discover beautiful destinations, thoughtfully planned tours and memorable experiences for every kind of traveller.',
-    href: '/tour-packages',
-  },
-  {
-    label: 'Explore Bangladesh',
-    image: '/images/hero-lake.webp',
-    eyebrow: 'Experience',
-    title: 'Find Your Somewhere',
-    description:
-      'From peaceful landscapes to vibrant cultures, let us help you plan your next unforgettable escape.',
-    href: '/destinations/bangladesh',
-  },
-]
+import { HERO_SLIDES } from '@/constants'
+import { useCarousel } from '@/hooks'
 
 export default function Hero() {
-  const [active, setActive] = useState(0)
+  const {
+    activeIndex: active,
+    setActiveIndex: setActive,
+    next,
+    previous,
+  } = useCarousel({ total: HERO_SLIDES.length, autoPlay: true, interval: 7000 })
 
   const slide = HERO_SLIDES[active]
-
-  const previous = () =>
-    setActive(
-      (current) => (current - 1 + HERO_SLIDES.length) % HERO_SLIDES.length
-    )
-
-  const next = () =>
-    setActive((current) => (current + 1) % HERO_SLIDES.length)
 
   return (
     <section
@@ -62,7 +30,7 @@ export default function Hero() {
         />
       ))}
 
-      {/* Light overlays for text readability; no blur */}
+      {/* Light overlays for text readability */}
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950/15 via-slate-950/40 to-slate-950/15" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-slate-950/5" />
 

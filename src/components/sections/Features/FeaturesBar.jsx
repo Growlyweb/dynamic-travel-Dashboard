@@ -6,7 +6,7 @@ import {
   ShieldCheck,
   Stamp,
 } from 'lucide-react'
-import { FEATURES } from '../data/site'
+import { FEATURES } from '@/constants'
 
 const ICONS = { Stamp, ShieldCheck, Globe2, Route, Briefcase, Headset }
 
