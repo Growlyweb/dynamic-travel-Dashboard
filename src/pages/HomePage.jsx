@@ -4,6 +4,7 @@ import {
   SearchWidget,
   ServicesSection,
   TourPackages,
+  VisaExplorer,
   VisaSection,
 } from '@/components/sections'
 
@@ -18,6 +19,7 @@ export default function HomePage() {
       <SearchWidget />
       <FeaturesBar />
       <VisaSection />
+      <VisaExplorer />
       <TourPackages />
       <ServicesSection />
     </main>

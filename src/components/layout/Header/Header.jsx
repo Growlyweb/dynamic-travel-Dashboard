@@ -6,7 +6,10 @@ import {
   Search,
   X,
 } from 'lucide-react'
-import { NAV_LINKS } from '@/constants'
+import { NAV_LINKS, NAV_SECTIONS } from '@/constants'
+import { useScrollSpy } from '@/hooks'
+
+const SPY_IDS = NAV_SECTIONS.map((section) => section.id)
 
 function Logo() {
   return (
@@ -31,11 +34,14 @@ function Logo() {
 
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const currentSection = useScrollSpy(SPY_IDS)
+  const activeHref = NAV_SECTIONS.find((section) => section.id === currentSection)?.navHref
 
   const headerLinks = NAV_LINKS
     .filter((link) => link.label !== 'Become a Partner')
     .map((link) => ({
       ...link,
+      active: link.href === activeHref,
       hasDropdown: false,
     }))
 
