@@ -7,19 +7,9 @@ import {
   Navigate,
 } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-
-// Storefront components
-import Header from './components/Header'
-import Hero from './components/Hero'
-import SearchWidget from './components/SearchWidget'
-import FeaturesBar from './components/FeaturesBar'
-import VisaSection from './components/VisaSection'
-import TourPackages from './components/TourPackages'
-import ServicesSection from './components/ServicesSection'
-import Footer from './components/footer/Footer'
+import { Header, Footer } from '@/components/layout'
+import { HomePage } from '@/pages'
 import AuthModal from './components/AuthModal'
-
-// B2B Dashboard
 import B2BDashboard from './b2b/B2BDashboard'
 import { LayoutDashboard, ArrowRight, ShieldCheck } from 'lucide-react'
 
@@ -76,14 +66,7 @@ function StorefrontView({ onOpenLogin, onNavigateToDashboard }) {
         onNavigateToDashboard={onNavigateToDashboard}
       />
 
-      <main>
-        <Hero />
-        <SearchWidget />
-        <FeaturesBar />
-        <VisaSection />
-        <TourPackages />
-        <ServicesSection />
-      </main>
+      <HomePage />
 
       <Footer />
     </div>

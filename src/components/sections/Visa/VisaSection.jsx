@@ -1,5 +1,5 @@
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
-import { VISA_POINTS } from '../data/site'
+import { VISA_POINTS } from '@/constants'
 
 export default function VisaSection() {
   return (
@@ -23,12 +23,10 @@ export default function VisaSection() {
       />
 
       <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-12 lg:gap-0 lg:px-8">
-
         {/* Left: Text */}
         <div className="lg:col-span-4">
           <div className="flex items-center gap-3">
             <span className="h-[3px] w-8 rounded-full bg-[#ff890b]" />
-
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#245078]">
               Our Speciality
             </span>
@@ -91,7 +89,6 @@ export default function VisaSection() {
             </ul>
           </div>
         </div>
-
       </div>
     </section>
   )
