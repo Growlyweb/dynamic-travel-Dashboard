@@ -388,11 +388,12 @@ export default function InvoicesCommissionView({
                         </td>
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <button
-                            onClick={() => alert(`Downloading Invoice ${inv.invoiceId} PDF`)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#0066cc] hover:bg-blue-50 rounded-md transition-colors"
+                            type="button"
+                            onClick={() => onSelectCommission({ ...inv, view: 'voucher' })}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#0066cc] bg-blue-50/70 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
                           >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Download PDF</span>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View Voucher</span>
                           </button>
                         </td>
                       </tr>

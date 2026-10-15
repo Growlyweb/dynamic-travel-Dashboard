@@ -11,9 +11,18 @@ import {
 import { NAV_LINKS } from '@/constants'
 import { useAuth } from '@/context/AuthContext'
 
-function Logo() {
+function Logo({ onClick }) {
   return (
-    <a href="#home" className="group flex shrink-0 items-center gap-2.5 whitespace-nowrap">
+    <a
+      href="/"
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault()
+          onClick()
+        }
+      }}
+      className="group flex shrink-0 items-center gap-2.5 whitespace-nowrap cursor-pointer"
+    >
       <img
         src="/company_logo.png"
         alt="ABL Travels Logo"
@@ -32,14 +41,29 @@ function Logo() {
   )
 }
 
-export default function Header({ onOpenLogin, onNavigateToDashboard }) {
+export default function Header({
+  onOpenLogin,
+  onNavigateToDashboard,
+  onNavigateToStorefront,
+  isDashboardView = false,
+  onLogout,
+}) {
   const [open, setOpen] = useState(false)
   const { currentUser, isAuthenticated, isB2BPartner, logout } = useAuth()
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout()
+    } else {
+      logout()
+    }
+  }
 
   const headerLinks = NAV_LINKS
     .filter((link) => link.label !== 'Become a Partner')
     .map((link) => ({
       ...link,
+      href: link.href.startsWith('#') ? `/${link.href}` : link.href,
       hasDropdown: false,
     }))
 
@@ -65,7 +89,7 @@ export default function Header({ onOpenLogin, onNavigateToDashboard }) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 xl:gap-8 px-4 sm:px-6 lg:px-8 flex-nowrap">
-        <Logo />
+        <Logo onClick={onNavigateToStorefront} />
 
         {/* Desktop Navigation - Strictly One Line */}
         <nav className="hidden lg:flex items-center gap-5 xl:gap-7 shrink-0 whitespace-nowrap flex-nowrap">
@@ -104,29 +128,39 @@ export default function Header({ onOpenLogin, onNavigateToDashboard }) {
             EN
           </button>
 
-          {/* Conditional Auth: Exactly ONE B2B Dashboard Button */}
+          {/* Conditional Auth: Unified in Storefront & B2B Dashboard */}
           {isAuthenticated ? (
             <div className="flex items-center gap-2 shrink-0 whitespace-nowrap flex-nowrap">
-              {isB2BPartner ? (
-                /* ONE B2B Dashboard Button */
-                <button
-                  type="button"
-                  onClick={onNavigateToDashboard}
-                  className="flex items-center gap-2 rounded-full bg-primary hover:bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary/25 transition-all hover:-translate-y-px cursor-pointer shrink-0 whitespace-nowrap"
-                >
-                  <LayoutDashboard className="size-4" />
-                  <span>B2B Dashboard</span>
-                </button>
-              ) : (
-                <span className="text-xs font-semibold text-slate-700 px-2">
-                  {currentUser?.name?.split(' ')[0]}
-                </span>
+              {isB2BPartner && (
+                isDashboardView ? (
+                  <button
+                    type="button"
+                    onClick={onNavigateToStorefront}
+                    className="flex items-center gap-2 rounded-full border border-slate-200 hover:border-primary hover:text-primary px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+                  >
+                    <span>Storefront</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onNavigateToDashboard}
+                    className="flex items-center gap-2 rounded-full bg-primary hover:bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary/25 transition-all hover:-translate-y-px cursor-pointer shrink-0 whitespace-nowrap"
+                  >
+                    <LayoutDashboard className="size-4" />
+                    <span>B2B Dashboard</span>
+                  </button>
+                )
               )}
+
+              {/* User badge */}
+              <span className="text-xs font-semibold text-slate-700 px-2">
+                {currentUser?.name?.split(' ')[0] || 'Partner'}
+              </span>
 
               {/* Logout button */}
               <button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 title="Log Out"
                 className="flex size-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer shrink-0"
               >

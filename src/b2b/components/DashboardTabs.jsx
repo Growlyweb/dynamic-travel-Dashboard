@@ -1,9 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import {
-  User,
   FileText,
   Truck,
-  ReceiptText,
   Headphones,
   ChevronLeft,
   ChevronRight,
@@ -14,7 +12,7 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
     {
       id: 'profile',
       label: 'My Profile',
-      icon: User,
+      icon: FileText,
     },
     {
       id: 'applications',
@@ -29,7 +27,7 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
     {
       id: 'invoices',
       label: 'Invoices & Commission',
-      icon: ReceiptText,
+      icon: FileText,
     },
     {
       id: 'support',
@@ -79,11 +77,11 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 relative z-20">
-      <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/70 border border-slate-100/90 p-1.5 sm:p-2 relative overflow-hidden">
-        {/* Left Scroll Cue & Button (visible only when scrollable on mobile/tablet) */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-7 relative z-20">
+      <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-1.5 sm:p-2 relative overflow-hidden">
+        {/* Left Scroll Cue & Button for small screens */}
         {canScrollLeft && (
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none rounded-l-2xl z-10 flex items-center pl-1.5 lg:hidden animate-fade-in">
+          <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none rounded-l-2xl z-10 flex items-center pl-1.5 lg:hidden animate-fade-in">
             <button
               onClick={() => handleScroll('left')}
               className="pointer-events-auto w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
@@ -95,9 +93,9 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
           </div>
         )}
 
-        {/* Right Scroll Cue & Button (visible only when scrollable on mobile/tablet) */}
+        {/* Right Scroll Cue & Button for small screens */}
         {canScrollRight && (
-          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/95 to-transparent pointer-events-none rounded-r-2xl z-10 flex items-center justify-end pr-1.5 lg:hidden animate-fade-in">
+          <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white via-white/95 to-transparent pointer-events-none rounded-r-2xl z-10 flex items-center justify-end pr-1.5 lg:hidden animate-fade-in">
             <button
               onClick={() => handleScroll('right')}
               className="pointer-events-auto w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
@@ -109,13 +107,13 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
           </div>
         )}
 
-        {/* 5-Tab List: Touch swipeable with auto-centering on mobile/tablet, full-width 5-column grid on desktop */}
+        {/* 5-Tab List */}
         <div
           ref={containerRef}
           onScroll={checkScroll}
           role="tablist"
           aria-label="Dashboard navigation tabs"
-          className="flex lg:grid lg:grid-cols-5 items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-0.5 w-full"
+          className="flex lg:grid lg:grid-cols-5 items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory w-full"
         >
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -129,17 +127,17 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
                 aria-selected={isActive}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => onTabChange(tab.id)}
-                className={`group shrink-0 snap-center lg:shrink w-auto lg:w-full flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 lg:px-4 xl:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-[13px] lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer select-none ${
+                className={`group shrink-0 snap-center lg:shrink w-auto lg:w-full flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-[13px] font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer select-none ${
                   isActive
-                    ? 'bg-[#0d2b59] text-white shadow-md shadow-[#0d2b59]/25 ring-1 ring-[#0d2b59]'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'bg-[#1d7bf2] text-white shadow-sm'
+                    : 'text-slate-700 hover:text-[#1d7bf2] hover:bg-slate-50'
                 }`}
               >
                 <Icon
                   className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
-                    isActive ? 'text-white scale-105' : 'text-slate-500 group-hover:text-slate-700'
+                    isActive ? 'text-white' : 'text-slate-500 group-hover:text-[#1d7bf2]'
                   }`}
-                  strokeWidth={isActive ? 2.2 : 2}
+                  strokeWidth={2}
                 />
                 <span className="whitespace-nowrap shrink-0">{tab.label}</span>
               </button>

@@ -5,6 +5,7 @@ import {
   ServicesSection,
   TourPackages,
   VisaSection,
+  TrustedWorldwide,
 } from '@/components/sections'
 
 /**
@@ -17,6 +18,7 @@ export default function HomePage() {
       <Hero />
       <SearchWidget />
       <FeaturesBar />
+      <TrustedWorldwide />
       <VisaSection />
       <TourPackages />
       <ServicesSection />

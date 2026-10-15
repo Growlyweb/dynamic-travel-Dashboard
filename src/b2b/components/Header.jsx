@@ -249,10 +249,10 @@ export default function Header({
                 {/* Name & Role */}
                 <div className="hidden sm:flex flex-col text-left whitespace-nowrap shrink-0">
                   <span className="text-xs font-bold text-slate-800 leading-tight whitespace-nowrap">
-                    {partner.name || 'Partner'}
+                    {partner.name || 'Abdul Rahman'}
                   </span>
                   <span className="text-[11px] text-slate-500 leading-tight whitespace-nowrap">
-                    B2B Partner
+                    Partner
                   </span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block shrink-0" />

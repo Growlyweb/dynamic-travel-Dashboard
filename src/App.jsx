@@ -8,7 +8,7 @@ import {
 } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { Header, Footer } from '@/components/layout'
-import { HomePage } from '@/pages'
+import { HomePage, LoginPage } from '@/pages'
 import AuthModal from './components/AuthModal'
 import B2BDashboard from './b2b/B2BDashboard'
 
@@ -54,13 +54,17 @@ function AppContent() {
           path="/"
           element={
             <StorefrontView
-              onOpenLogin={openLoginModal}
+              onOpenLogin={() => navigate('/login')}
               onNavigateToDashboard={() => navigate('/b2b')}
             />
           }
         />
 
-        {/* 2. Integrated B2B Partner Dashboard */}
+        {/* 2. Dedicated Auth Pages */}
+        <Route path="/login" element={<LoginPage initialMode="login" />} />
+        <Route path="/register" element={<LoginPage initialMode="register" />} />
+
+        {/* 3. Integrated B2B Partner Dashboard & Profile */}
         <Route
           path="/b2b"
           element={
@@ -71,13 +75,44 @@ function AppContent() {
                 navigate('/')
               }}
               currentUser={currentUser}
+              initialTab="profile"
             />
           }
         />
 
-        {/* 3. Backward compatible aliases */}
-        <Route path="/b2b-dashboard" element={<Navigate to="/b2b" replace />} />
-        <Route path="/dashboard" element={<Navigate to="/b2b" replace />} />
+        <Route
+          path="/profile"
+          element={
+            <B2BDashboard
+              onNavigateToStorefront={() => navigate('/')}
+              onLogout={() => {
+                logout()
+                navigate('/')
+              }}
+              currentUser={currentUser}
+              initialTab="profile"
+            />
+          }
+        />
+
+        <Route
+          path="/my-profile"
+          element={
+            <B2BDashboard
+              onNavigateToStorefront={() => navigate('/')}
+              onLogout={() => {
+                logout()
+                navigate('/')
+              }}
+              currentUser={currentUser}
+              initialTab="profile"
+            />
+          }
+        />
+
+        {/* 4. Backward compatible aliases */}
+        <Route path="/b2b-dashboard" element={<Navigate to="/profile" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
 
         {/* Fallback to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

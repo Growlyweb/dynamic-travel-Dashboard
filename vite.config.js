@@ -16,7 +16,7 @@ export default defineConfig({
   },
   server: {
     allowedHosts: [
-      'maybe-robin-phoenix-mailing.trycloudflare.com',
+      'symantec-valuation-affordable-runs.trycloudflare.com',
     ],
   },
 })
