@@ -8,8 +8,11 @@ import {
   X,
   LayoutDashboard,
 } from 'lucide-react'
-import { NAV_LINKS } from '@/constants'
+import { NAV_LINKS, NAV_SECTIONS } from '@/constants'
 import { useAuth } from '@/context/AuthContext'
+import { useScrollSpy } from '@/hooks'
+
+const SPY_IDS = NAV_SECTIONS?.map((section) => section.id) ?? []
 
 function Logo({ onClick }) {
   return (
@@ -50,6 +53,8 @@ export default function Header({
 }) {
   const [open, setOpen] = useState(false)
   const { currentUser, isAuthenticated, isB2BPartner, logout } = useAuth()
+  const currentSection = useScrollSpy(SPY_IDS)
+  const activeHref = NAV_SECTIONS?.find((section) => section.id === currentSection)?.navHref
 
   const handleLogout = () => {
     if (onLogout) {
@@ -61,11 +66,15 @@ export default function Header({
 
   const headerLinks = NAV_LINKS
     .filter((link) => link.label !== 'Become a Partner')
-    .map((link) => ({
-      ...link,
-      href: link.href.startsWith('#') ? `/${link.href}` : link.href,
-      hasDropdown: false,
-    }))
+    .map((link) => {
+      const href = isDashboardView && link.href.startsWith('#') ? `/${link.href}` : link.href
+      return {
+        ...link,
+        href,
+        active: !isDashboardView && link.href === activeHref,
+        hasDropdown: false,
+      }
+    })
 
   if (!headerLinks.some((link) => link.label === 'Gallery')) {
     const galleryLink = {

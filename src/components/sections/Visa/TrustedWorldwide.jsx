@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { ArrowRight, ChevronLeft, ChevronRight, Users, Sparkles } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { goToVisa } from '@/hooks'
 
 // Ultra-crisp Circular Vector Flags
 function CircularFlag({ code, className = 'size-6' }) {
@@ -316,11 +317,12 @@ function ArcGauge({ percent, color, trackColor, flagCode }) {
 }
 
 // Single Country Card with Premium Glass & Micro-elevation
-function CountryCard({ country }) {
+function CountryCard({ country, onSelect }) {
   return (
     <div
       data-country-card
-      className="snap-start shrink-0 w-[175px] sm:w-[190px] md:w-[205px] lg:w-[215px] xl:w-[220px] bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-[0_4px_18px_-4px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-6px_rgba(15,23,42,0.12)] hover:-translate-y-1.5 transition-all duration-300 ease-out flex flex-col group select-none"
+      onClick={() => onSelect?.(country.flagCode)}
+      className="snap-start shrink-0 w-[175px] sm:w-[190px] md:w-[205px] lg:w-[215px] xl:w-[220px] bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-[0_4px_18px_-4px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-6px_rgba(15,23,42,0.12)] hover:-translate-y-1.5 transition-all duration-300 ease-out flex flex-col group select-none cursor-pointer"
     >
       {/* Top Accent Gradient Color Stripe */}
       <div
@@ -392,9 +394,15 @@ export default function TrustedWorldwide() {
 
   // Drag-to-scroll interaction for desktop
   const isDragging = useRef(false)
+  const dragDistance = useRef(0)
   const startX = useRef(0)
   const scrollLeftState = useRef(0)
   const totalDots = 5
+
+  const handleSelectCountry = (flagCode) => {
+    if (dragDistance.current > 5) return
+    goToVisa(flagCode.toLowerCase())
+  }
 
   // Update button states and pagination based on scroll position
   const handleScroll = useCallback(() => {
@@ -423,6 +431,7 @@ export default function TrustedWorldwide() {
   const handleMouseDown = (e) => {
     if (!scrollRef.current) return
     isDragging.current = true
+    dragDistance.current = 0
     startX.current = e.pageX - scrollRef.current.offsetLeft
     scrollLeftState.current = scrollRef.current.scrollLeft
   }
@@ -439,6 +448,8 @@ export default function TrustedWorldwide() {
     if (!isDragging.current || !scrollRef.current) return
     e.preventDefault()
     const x = e.pageX - scrollRef.current.offsetLeft
+    const diff = Math.abs(x - startX.current)
+    dragDistance.current += diff
     const walk = (x - startX.current) * 1.4 // Speed multiplier for responsive drag
     scrollRef.current.scrollLeft = scrollLeftState.current - walk
   }
@@ -598,7 +609,11 @@ export default function TrustedWorldwide() {
             }}
           >
             {COUNTRIES.map((country) => (
-              <CountryCard key={country.name} country={country} />
+              <CountryCard
+                key={country.name}
+                country={country}
+                onSelect={handleSelectCountry}
+              />
             ))}
           </div>
 

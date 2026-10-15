@@ -1,10 +1,11 @@
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 import { VISA_POINTS } from '@/constants'
+import { goToVisa } from '@/hooks'
 
 export default function VisaSection() {
   return (
     <section
-      id="visa"
+      id="china-visa"
       className="relative isolate overflow-hidden py-16 md:py-24"
     >
       {/* Background Image */}
@@ -44,7 +45,11 @@ export default function VisaSection() {
           </p>
 
           <a
-            href="#visa-form"
+            href="#visa/cn/tourist"
+            onClick={(event) => {
+              event.preventDefault()
+              goToVisa('cn', 'tourist')
+            }}
             className="mt-7 inline-flex items-center gap-3 rounded-full bg-[#ff890b] px-7 py-4 text-[15px] font-bold text-white shadow-lg shadow-orange-200/50 transition hover:-translate-y-0.5 hover:bg-[#f47b00] active:scale-[0.98]"
           >
             Apply for China Visa

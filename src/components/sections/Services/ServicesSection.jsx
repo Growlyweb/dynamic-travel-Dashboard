@@ -138,7 +138,7 @@ export default function ServicesSection() {
         </div>
       </div>
 
-      {/* Discover Bangladesh — Same Background */}
+      {/* Discover Bangladesh - Same Background */}
       <div
         id="bangladesh"
         className="relative"

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
   X,
-  CheckCircle2,
   Download,
   Printer,
   Mail,
@@ -17,23 +16,22 @@ import { COMMISSION_INVOICE_DEFAULT } from '../../data/commissionData'
 import CommissionVoucherDocument from './CommissionVoucherDocument'
 
 export default function CommissionDetailModal({ commission, onClose }) {
-  // If commission is false/null, don't render
-  if (!commission) return null
-
-  // Use commission details or fallback to exact default invoice INV-2025-0187
-  const invoiceData = COMMISSION_INVOICE_DEFAULT
-
   // View mode: 'voucher' (Official A4 Voucher) vs 'modal' (Invoice Details Overview)
   const [viewMode, setViewMode] = useState(commission?.view || 'voucher')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [emailStatus, setEmailStatus] = useState('')
 
   useEffect(() => {
     if (commission?.view) {
       setViewMode(commission.view)
     }
-  }, [commission])
+  }, [commission?.view])
 
-  // Pagination for Passport Details table (8 rows per page matching reference)
-  const [currentPage, setCurrentPage] = useState(1)
+  // If commission is false/null, don't render
+  if (!commission) return null
+
+  // Use commission details or fallback to exact default invoice INV-2025-0187
+  const invoiceData = COMMISSION_INVOICE_DEFAULT
   const pageSize = 8
   const totalEntries = invoiceData.passports.length
   const totalPages = Math.ceil(totalEntries / pageSize)
@@ -41,20 +39,12 @@ export default function CommissionDetailModal({ commission, onClose }) {
   const startIndex = (currentPage - 1) * pageSize
   const currentPassports = invoiceData.passports.slice(startIndex, startIndex + pageSize)
 
-  // Email confirmation state
-  const [emailStatus, setEmailStatus] = useState('')
-
   const handleSendEmail = () => {
     setEmailStatus('sending')
     setTimeout(() => {
       setEmailStatus('sent')
       setTimeout(() => setEmailStatus(''), 4000)
     }, 800)
-  }
-
-  const handlePrint = () => {
-    // If not already in voucher view, temporarily switch to voucher or trigger print directly
-    window.print()
   }
 
   return (

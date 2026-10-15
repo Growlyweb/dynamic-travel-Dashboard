@@ -1,6 +1,7 @@
 export { default as Hero, SearchWidget } from './Hero'
 export { default as FeaturesBar } from './Features'
 export { default as VisaSection, TrustedWorldwide } from './Visa'
+export { default as VisaExplorer } from './VisaExplorer'
 export { default as TourPackages } from './TourPackages'
 export { default as ServicesSection } from './Services'
 export { default as BangladeshSection } from './Bangladesh'

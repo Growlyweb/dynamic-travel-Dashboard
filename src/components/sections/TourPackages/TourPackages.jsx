@@ -75,7 +75,7 @@ export default function TourPackages() {
 
             <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-[#6b7a8d] sm:text-[15px]">
               Handpicked itineraries with flights, hotels and guided
-              experiences — just pack your bags and go.
+              experiences - just pack your bags and go.
             </p>
           </div>
 
@@ -128,7 +128,7 @@ export default function TourPackages() {
                     {/* subtle dark vignette at bottom */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
 
-                    {/* Category badge — glass pill at top-left */}
+                    {/* Category badge - glass pill at top-left */}
                     <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/75 px-2.5 py-1.5 text-[11px] font-semibold text-[#1a2639] shadow-sm backdrop-blur-md">
                       <CatIcon className="size-3 shrink-0 text-[#5d7a9e]" strokeWidth={2.2} />
                       <span className="truncate">{cat.label}</span>

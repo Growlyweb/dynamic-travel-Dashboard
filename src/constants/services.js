@@ -59,7 +59,7 @@ export const SERVICES = [
   {
     icon: 'Route',
     title: 'Custom Tour Planning',
-    desc: 'Tell us your dream trip — we design a personalized itinerary around your budget and dates.',
+    desc: 'Tell us your dream trip - we design a personalized itinerary around your budget and dates.',
     tile: 'bg-[#e6f7f3] text-[#0d9488]',
   },
   {

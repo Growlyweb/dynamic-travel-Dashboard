@@ -30,7 +30,7 @@ export default function BangladeshSection() {
             Bringing the World to Beautiful Bangladesh
           </h2>
           <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/75">
-            From the Sundarbans to the hills of Bandarban — we showcase the
+            From the Sundarbans to the hills of Bandarban - we showcase the
             best of our country to travelers around the globe, and bring the
             world home to explore it.
           </p>

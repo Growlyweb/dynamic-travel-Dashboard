@@ -1,4 +1,4 @@
-# ABL Travels — Storefront & B2B Partner Portal
+# ABL Travels - Storefront & B2B Partner Portal
 
 A modern, high-performance web application built with **React 19**, **Vite**, and **Tailwind CSS v4**, delivering both a customer-facing travel storefront and an enterprise B2B partner dashboard.
 
@@ -36,11 +36,21 @@ A modern, high-performance web application built with **React 19**, **Vite**, an
   - Embedded circular vector flags (China, Thailand, Singapore, Malaysia, UAE, Turkey, India, Schengen, UK, USA, Japan, Saudi Arabia).
   - Visas issued count and high-contrast statistics.
 
-### 3. 🎯 Unified Global Header
+### 3. 🗺 Single-Page Visa Explorer (`#visa`)
+- **Country Sidebar**: Filterable 200+ world country selector with FlagCDN vector flags, cached offline support, and search filtering.
+- **Deep-Linked Visa Types**: Tourist, Business, Student, Transit, and Work visa tabs deep-linked via hash routing (`#visa/:code/:typeId`).
+- **Interactive Details & Fees**:
+  - Processing facts: validity, stay duration, entries, and standard vs express turnaround times.
+  - Comprehensive requirements checklist: passport validity, photos, financial proof, invitation letters.
+  - Transparent fee cards with breakdown of embassy vs service charges.
+  - Seamless deep-linking from both **Trusted Worldwide** country cards and the **China Visa** spotlight section.
+
+### 4. 🎯 Unified Global Header
 - **Single Header Architecture**: Same storefront header shared seamlessly across public pages and B2B views.
+- **Scroll-Spy Navigation**: Automatically highlights the active nav item based on the on-screen section.
 - **Context-Aware Controls**: Dynamically renders "Partner Dashboard" CTA, notifications, profile shortcuts, and logout actions.
 
-### 4. 🔐 Interactive B2B Login (`/login`)
+### 5. 🔐 Interactive B2B Login (`/login`)
 - **Dynamic Multi-Banner Carousel**: High-resolution travel photography with auto-rotation (5s timer) and interactive thumbnail tabs.
 - **Partner Authentication Form**: Email/password inputs, remember me, password recovery, and instant login redirect into `/b2b`.
 
@@ -77,7 +87,7 @@ storefront/
 │   │   ├── common/                       # Reusable micro-components
 │   │   ├── layout/                       # Global layout elements
 │   │   │   ├── Header/
-│   │   │   │   └── Header.jsx            # Unified storefront & B2B header
+│   │   │   │   └── Header.jsx            # Unified storefront & B2B header with scroll-spy
 │   │   │   └── Footer/
 │   │   │       └── Footer.jsx            # Master footer
 │   │   └── sections/                     # Homepage storefront sections
@@ -86,6 +96,15 @@ storefront/
 │   │       ├── Visa/
 │   │       │   ├── TrustedWorldwide.jsx  # Scrollable Visa Success carousel
 │   │       │   └── VisaSection.jsx       # China Visa highlight section
+│   │       ├── VisaExplorer/             # Single-page Visa Explorer module
+│   │       │   ├── VisaExplorer.jsx      # Main explorer container (#visa)
+│   │       │   ├── CountrySidebar.jsx    # Searchable country list
+│   │       │   ├── VisaHero.jsx          # Country banner & highlights
+│   │       │   ├── VisaTypeTabs.jsx      # Tourist/Business/Student tabs
+│   │       │   ├── RequirementsCard.jsx  # Checklist of required documents
+│   │       │   ├── FeeCard.jsx           # Government & service fee breakdown
+│   │       │   ├── ProcessingDetails.jsx # Stay duration & turnaround facts
+│   │       │   └── OnRequestPanel.jsx    # Custom consultation prompt
 │   │       ├── TourPackages/             # Package showcase
 │   │       └── Services/                 # Full services catalog
 │   ├── pages/                            # Top-level view routes

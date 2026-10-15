@@ -35,7 +35,6 @@ function AppContent() {
     logout,
     isAuthModalOpen,
     authModalDefaultTab,
-    openLoginModal,
     closeLoginModal,
   } = useAuth()
 
@@ -49,9 +48,18 @@ function AppContent() {
   return (
     <>
       <Routes>
-        {/* 1. Public Storefront Home */}
+        {/* 1. Public Storefront Home & Visa Routes */}
         <Route
           path="/"
+          element={
+            <StorefrontView
+              onOpenLogin={() => navigate('/login')}
+              onNavigateToDashboard={() => navigate('/b2b')}
+            />
+          }
+        />
+        <Route
+          path="/visa"
           element={
             <StorefrontView
               onOpenLogin={() => navigate('/login')}
