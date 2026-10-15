@@ -4,7 +4,6 @@ import {
   SearchWidget,
   ServicesSection,
   TourPackages,
-  VisaExplorer,
   VisaSection,
   TrustedWorldwide,
 } from '@/components/sections'
@@ -21,7 +20,6 @@ export default function HomePage() {
       <FeaturesBar />
       <TrustedWorldwide />
       <VisaSection />
-      <VisaExplorer />
       <TourPackages />
       <ServicesSection />
     </main>

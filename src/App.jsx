@@ -8,7 +8,7 @@ import {
 } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { Header, Footer } from '@/components/layout'
-import { HomePage, LoginPage } from '@/pages'
+import { HomePage, LoginPage, VisaPage } from '@/pages'
 import AuthModal from './components/AuthModal'
 import B2BDashboard from './b2b/B2BDashboard'
 
@@ -22,6 +22,22 @@ function StorefrontView({ onOpenLogin, onNavigateToDashboard }) {
       />
 
       <HomePage />
+
+      <Footer />
+    </div>
+  )
+}
+
+function VisaPageView({ onOpenLogin, onNavigateToDashboard }) {
+  return (
+    <div className="min-h-screen bg-white font-sans text-navy">
+      {/* Main Storefront Header */}
+      <Header
+        onOpenLogin={onOpenLogin}
+        onNavigateToDashboard={onNavigateToDashboard}
+      />
+
+      <VisaPage />
 
       <Footer />
     </div>
@@ -48,7 +64,7 @@ function AppContent() {
   return (
     <>
       <Routes>
-        {/* 1. Public Storefront Home & Visa Routes */}
+        {/* 1. Public Storefront Home */}
         <Route
           path="/"
           element={
@@ -58,10 +74,12 @@ function AppContent() {
             />
           }
         />
+
+        {/* 2. Dedicated Visa Explorer Page */}
         <Route
           path="/visa"
           element={
-            <StorefrontView
+            <VisaPageView
               onOpenLogin={() => navigate('/login')}
               onNavigateToDashboard={() => navigate('/b2b')}
             />

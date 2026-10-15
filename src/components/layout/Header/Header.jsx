@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   Globe,
   LogIn,
@@ -52,9 +53,13 @@ export default function Header({
   onLogout,
 }) {
   const [open, setOpen] = useState(false)
+  const location = useLocation()
+  const isVisaPage = location?.pathname === '/visa'
+  const isHomePage = location?.pathname === '/'
+
   const { currentUser, isAuthenticated, isB2BPartner, logout } = useAuth()
   const currentSection = useScrollSpy(SPY_IDS)
-  const activeHref = NAV_SECTIONS?.find((section) => section.id === currentSection)?.navHref
+  const activeHref = isHomePage ? NAV_SECTIONS?.find((section) => section.id === currentSection)?.navHref : null
 
   const handleLogout = () => {
     if (onLogout) {
@@ -67,11 +72,29 @@ export default function Header({
   const headerLinks = NAV_LINKS
     .filter((link) => link.label !== 'Become a Partner')
     .map((link) => {
-      const href = isDashboardView && link.href.startsWith('#') ? `/${link.href}` : link.href
+      let href = link.href
+      let active = false
+
+      if (link.label === 'Visa') {
+        href = '/visa'
+        active = isVisaPage
+      } else if (link.label === 'Home') {
+        href = '/'
+        active = isHomePage && (!activeHref || activeHref === '/' || activeHref === '#home')
+      } else {
+        // For section anchors like #packages, #about, #contact
+        href = !isHomePage && link.href.startsWith('#') ? `/${link.href}` : link.href
+        active = isHomePage && (link.href === activeHref || `/${link.href}` === activeHref)
+      }
+
+      if (isDashboardView) {
+        active = false
+      }
+
       return {
         ...link,
         href,
-        active: !isDashboardView && link.href === activeHref,
+        active,
         hasDropdown: false,
       }
     })

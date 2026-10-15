@@ -401,7 +401,11 @@ export default function TrustedWorldwide() {
 
   const handleSelectCountry = (flagCode) => {
     if (dragDistance.current > 5) return
-    goToVisa(flagCode.toLowerCase())
+    if (window.location.pathname === '/visa') {
+      goToVisa(flagCode.toLowerCase())
+    } else {
+      window.location.href = `/visa#visa/${flagCode.toLowerCase()}`
+    }
   }
 
   // Update button states and pagination based on scroll position
@@ -547,7 +551,7 @@ export default function TrustedWorldwide() {
 
             {/* View All Countries Button */}
             <a
-              href="#visa"
+              href="/visa"
               className="group inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-white hover:bg-slate-50 text-[#0a192f] border border-slate-200/90 hover:border-amber-400 text-xs sm:text-[13px] font-bold shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
             >
               <span>View All Countries</span>

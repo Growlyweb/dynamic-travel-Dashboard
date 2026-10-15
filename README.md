@@ -36,18 +36,20 @@ A modern, high-performance web application built with **React 19**, **Vite**, an
   - Embedded circular vector flags (China, Thailand, Singapore, Malaysia, UAE, Turkey, India, Schengen, UK, USA, Japan, Saudi Arabia).
   - Visas issued count and high-contrast statistics.
 
-### 3. 🗺 Single-Page Visa Explorer (`#visa`)
-- **Country Sidebar**: Filterable 200+ world country selector with FlagCDN vector flags, cached offline support, and search filtering.
-- **Deep-Linked Visa Types**: Tourist, Business, Student, Transit, and Work visa tabs deep-linked via hash routing (`#visa/:code/:typeId`).
-- **Interactive Details & Fees**:
-  - Processing facts: validity, stay duration, entries, and standard vs express turnaround times.
-  - Comprehensive requirements checklist: passport validity, photos, financial proof, invitation letters.
-  - Transparent fee cards with breakdown of embassy vs service charges.
-  - Seamless deep-linking from both **Trusted Worldwide** country cards and the **China Visa** spotlight section.
+### 3. 🗺 Dedicated Visa Explorer Page (`/visa`)
+- **Direct Header Navigation**: Accessible anytime by clicking **Visa** on the main header.
+- **Hero & Trust Metrics**: High-contrast dark gradient hero banner with breadcrumbs and 4 key trust cards (200+ Countries, 98.4% Success, 24-48h Pre-Check, Transparent Fees).
+- **Inspirational Destination Carousel**: Integrated `<TrustedWorldwide />` carousel with interactive country cards that update the explorer in real time.
+- **Interactive Explorer Core**:
+  - Filterable 200+ world country selector with FlagCDN vector flags, cached offline support, and search filtering.
+  - Tourist, Business, Student, Transit, and Work visa tabs deep-linked via hash routing (`#visa/:code/:typeId`).
+  - Comprehensive document checklists, transparent embassy vs service fees, and stay duration facts.
+- **China Visa Expedited Spotlight**: Quick-action consultation banner for priority China visa submissions.
+- **Visa FAQs & Helpdesk**: Helpful answers to common questions on passport validity, bank statements, and tracking.
 
 ### 4. 🎯 Unified Global Header
-- **Single Header Architecture**: Same storefront header shared seamlessly across public pages and B2B views.
-- **Scroll-Spy Navigation**: Automatically highlights the active nav item based on the on-screen section.
+- **Single Header Architecture**: Same storefront header shared seamlessly across public pages, the dedicated Visa page, and B2B views.
+- **Active Page & Scroll-Spy Navigation**: Automatically highlights **Visa** on `/visa` and dynamically highlights on-screen sections on `/`.
 - **Context-Aware Controls**: Dynamically renders "Partner Dashboard" CTA, notifications, profile shortcuts, and logout actions.
 
 ### 5. 🔐 Interactive B2B Login (`/login`)
@@ -87,10 +89,10 @@ storefront/
 │   │   ├── common/                       # Reusable micro-components
 │   │   ├── layout/                       # Global layout elements
 │   │   │   ├── Header/
-│   │   │   │   └── Header.jsx            # Unified storefront & B2B header with scroll-spy
+│   │   │   │   └── Header.jsx            # Unified storefront & B2B header with active page detection
 │   │   │   └── Footer/
 │   │   │       └── Footer.jsx            # Master footer
-│   │   └── sections/                     # Homepage storefront sections
+│   │   └── sections/                     # Homepage & reusable sections
 │   │       ├── Hero/                     # Dynamic storefront hero & search
 │   │       ├── Features/                 # Value propositions & trust strip
 │   │       ├── Visa/
@@ -109,6 +111,7 @@ storefront/
 │   │       └── Services/                 # Full services catalog
 │   ├── pages/                            # Top-level view routes
 │   │   ├── HomePage.jsx                  # Storefront landing page
+│   │   ├── VisaPage.jsx                  # Dedicated Visa Services & Explorer page
 │   │   └── LoginPage.jsx                 # B2B partner login page
 │   ├── App.jsx                           # Route controller & layout wrapper
 │   ├── index.css                         # Design tokens, utilities & print styles

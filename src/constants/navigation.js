@@ -3,23 +3,21 @@
  */
 
 export const NAV_LINKS = [
-  { label: 'Home', href: '#home' },
-  { label: 'Visa', href: '#visa', hasDropdown: true },
-  { label: 'Tour Packages', href: '#packages', hasDropdown: true },
-  { label: 'Become a Partner', href: '#partner' },
-  { label: 'About Us', href: '#about' },
-  { label: 'Contact Us', href: '#contact' },
+  { label: 'Home', href: '/' },
+  { label: 'Visa', href: '/visa', hasDropdown: false },
+  { label: 'Tour Packages', href: '/#packages', hasDropdown: false },
+  { label: 'Become a Partner', href: '/#partner' },
+  { label: 'About Us', href: '/#about' },
+  { label: 'Contact Us', href: '/#contact' },
 ]
 
 // In page order. navHref is the nav link lit while the section is on screen, null lights none.
 export const NAV_SECTIONS = [
-  { id: 'home', navHref: '#home' },
-  { id: 'china-visa', navHref: '#visa' },
-  { id: 'visa', navHref: '#visa' },
-  { id: 'packages', navHref: '#packages' },
+  { id: 'home', navHref: '/' },
+  { id: 'packages', navHref: '/#packages' },
   { id: 'services', navHref: null },
-  { id: 'about', navHref: '#about' },
-  { id: 'contact', navHref: '#contact' },
+  { id: 'about', navHref: '/#about' },
+  { id: 'contact', navHref: '/#contact' },
 ]
 
 export const FOOTER_LINKS = {
