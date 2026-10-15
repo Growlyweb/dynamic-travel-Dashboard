@@ -36,35 +36,47 @@ export default function Hero() {
 
   const slide = HERO_SLIDES[active]
 
-  const previous = () =>
-    setActive(
-      (current) => (current - 1 + HERO_SLIDES.length) % HERO_SLIDES.length
+  const previous = () => {
+    setActive((current) =>
+      current === 0 ? HERO_SLIDES.length - 1 : current - 1
     )
+  }
 
-  const next = () =>
-    setActive((current) => (current + 1) % HERO_SLIDES.length)
+  const next = () => {
+    setActive((current) =>
+      current === HERO_SLIDES.length - 1 ? 0 : current + 1
+    )
+  }
 
   return (
     <section
       id="home"
       className="relative isolate min-h-[590px] overflow-hidden bg-slate-950 md:min-h-[650px]"
     >
-      {/* Hero Background Slides */}
-      {HERO_SLIDES.map((item, index) => (
-        <img
-          key={item.image}
-          src={item.image}
-          alt={item.label}
-          aria-hidden={index !== active}
-          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ${
-            index === active ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ))}
+      {/* Background Slides */}
+      <div className="pointer-events-none absolute inset-0 z-0">
+        {HERO_SLIDES.map((item, index) => (
+          <img
+            key={item.image}
+            src={item.image}
+            alt=""
+            aria-hidden="true"
+            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ${index === active ? 'opacity-100' : 'opacity-0'
+              }`}
+          />
+        ))}
+      </div>
 
-      {/* Light overlays for text readability; no blur */}
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/15 via-slate-950/40 to-slate-950/15" />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-slate-950/5" />
+      {/* Dark Overlays */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-slate-950/35 via-slate-950/30 to-slate-950/20"
+        aria-hidden="true"
+      />
+
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-slate-950/45 via-transparent to-slate-950/10"
+        aria-hidden="true"
+      />
 
       {/* Hero Content */}
       <div className="relative z-10 mx-auto flex min-h-[590px] w-full max-w-7xl items-center justify-between gap-8 px-5 py-20 sm:px-8 md:min-h-[650px] lg:px-10">
@@ -104,47 +116,55 @@ export default function Hero() {
                 aria-label={`Go to slide ${index + 1}: ${item.label}`}
                 aria-pressed={index === active}
                 onClick={() => setActive(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === active
+                className={`relative z-20 h-2 rounded-full transition-all ${index === active
                     ? 'w-7 bg-white'
                     : 'w-2 bg-white/55 hover:bg-white/90'
-                }`}
+                  }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Clickable Destination Cards */}
+        {/* Destination Cards */}
         <div className="hidden w-52 shrink-0 flex-col gap-3 lg:flex xl:w-56">
-          {HERO_SLIDES.map((item) => (
-            <a
+          {HERO_SLIDES.map((item, index) => (
+            <button
               key={item.label}
-              href={item.href}
-              className="group relative h-28 overflow-hidden rounded-2xl border-2 border-white/80 shadow-xl"
+              type="button"
+              onClick={() => setActive(index)}
+              aria-label={`Show ${item.label} slide`}
+              aria-pressed={index === active}
+              className={`group relative h-28 overflow-hidden rounded-2xl border-2 shadow-xl transition ${index === active
+                  ? 'border-white'
+                  : 'border-white/50 hover:border-white'
+                }`}
             >
               <img
                 src={item.image}
-                alt={item.label}
+                alt=""
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
               />
 
-              <span className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
+              <span
+                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"
+                aria-hidden="true"
+              />
 
-              <span className="absolute bottom-3 left-3 right-2 text-sm font-semibold text-white">
+              <span className="pointer-events-none absolute bottom-3 left-3 right-2 text-left text-sm font-semibold text-white">
                 {item.label}
               </span>
-            </a>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Main Hero Slider Controls */}
-      <div className="absolute bottom-6 right-6 z-20 flex gap-3 sm:bottom-8 sm:right-10">
+      {/* Main Slider Controls */}
+      <div className="absolute bottom-6 right-6 z-30 flex gap-3 sm:bottom-8 sm:right-10">
         <button
           type="button"
           aria-label="Previous hero slide"
           onClick={previous}
-          className="flex size-10 items-center justify-center rounded-full border border-white/60 text-white transition hover:bg-white hover:text-slate-900"
+          className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-slate-950/30 text-white shadow-lg backdrop-blur-sm transition hover:border-white hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <ChevronLeft className="size-5" />
         </button>
@@ -153,7 +173,7 @@ export default function Hero() {
           type="button"
           aria-label="Next hero slide"
           onClick={next}
-          className="flex size-10 items-center justify-center rounded-full border border-white/60 text-white transition hover:bg-white hover:text-slate-900"
+          className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-slate-950/30 text-white shadow-lg backdrop-blur-sm transition hover:border-white hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <ChevronRight className="size-5" />
         </button>
