@@ -8,7 +8,7 @@ export const NAV_LINKS = [
   { label: 'Tour Packages', href: '/#packages', hasDropdown: false },
   { label: 'Become a Partner', href: '/#partner' },
   { label: 'About Us', href: '/#about' },
-  { label: 'Contact Us', href: '/#contact' },
+  { label: 'Contact Us', href: '/contact' },
 ]
 
 // In page order. navHref is the nav link lit while the section is on screen, null lights none.

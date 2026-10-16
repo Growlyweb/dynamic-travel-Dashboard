@@ -25,34 +25,11 @@ export function AblLogo({ className = 'h-10', showTagline = true, light = false 
   return (
     <div className={`flex flex-col items-center select-none ${className}`}>
       <div className="flex items-center gap-2.5">
-        {/* Origami Folded Airplane Graphic */}
-        <svg
-          viewBox="0 0 120 100"
-          className="w-10 h-8 shrink-0 drop-shadow-sm"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Top Blue Wing */}
-          <path
-            d="M8 20 C 8 11, 16 8, 26 8 L 94 8 C 104 8, 107 15, 102 23 L 80 50 C 76 55, 68 57, 60 57 L 22 57 C 12 57, 8 52, 8 44 Z"
-            fill="#0284c7"
-          />
-          {/* Lower Tail Fin Accent */}
-          <path
-            d="M20 54 L 38 78 C 40 81, 44 80, 43 76 L 36 54 Z"
-            fill="#0284c7"
-          />
-          {/* Orange Diagonal Swoop */}
-          <path
-            d="M96 20 L 52 86 C 48 92, 40 94, 34 89 C 28 84, 28 76, 33 69 L 75 14 C 78 9, 85 8, 89 11 Z"
-            fill="#f97316"
-          />
-          {/* White Mini Jet Silhouette inside orange wing */}
-          <path
-            d="M82 22 L 78 26 L 73 24 L 71 27 L 76 29 L 74 34 L 77 34 L 80 30 L 85 32 L 86 29 L 82 27 L 85 24 Z"
-            fill="#ffffff"
-          />
-        </svg>
+        <img
+          src="/company_logo.png"
+          alt="ABL Travels Logo"
+          className="size-9 rounded-lg object-contain bg-white p-0.5 shadow-2xs shrink-0"
+        />
 
         {/* Brand Text */}
         <span
@@ -383,29 +360,11 @@ export default function LoginPage({ initialMode = 'login' }) {
           {/* Top Left Brand Logo */}
           <div className="flex items-center gap-2 mb-4">
             <div className="flex items-center gap-2.5">
-              <svg
-                viewBox="0 0 120 100"
-                className="w-9 h-7 drop-shadow-sm"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M8 20 C 8 11, 16 8, 26 8 L 94 8 C 104 8, 107 15, 102 23 L 80 50 C 76 55, 68 57, 60 57 L 22 57 C 12 57, 8 52, 8 44 Z"
-                  fill="#0284c7"
-                />
-                <path
-                  d="M20 54 L 38 78 C 40 81, 44 80, 43 76 L 36 54 Z"
-                  fill="#0284c7"
-                />
-                <path
-                  d="M96 20 L 52 86 C 48 92, 40 94, 34 89 C 28 84, 28 76, 33 69 L 75 14 C 78 9, 85 8, 89 11 Z"
-                  fill="#f97316"
-                />
-                <path
-                  d="M82 22 L 78 26 L 73 24 L 71 27 L 76 29 L 74 34 L 77 34 L 80 30 L 85 32 L 86 29 L 82 27 L 85 24 Z"
-                  fill="#ffffff"
-                />
-              </svg>
+              <img
+                src="/company_logo.png"
+                alt="ABL Travels Logo"
+                className="size-8 rounded-lg object-contain bg-white p-0.5 shadow-2xs shrink-0"
+              />
               <span className="text-xl font-black italic text-[#0284c7]">
                 ABL Travels
               </span>
@@ -729,29 +688,11 @@ export default function LoginPage({ initialMode = 'login' }) {
             {/* Top Logo */}
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2">
-                <svg
-                  viewBox="0 0 120 100"
-                  className="w-9 h-7 drop-shadow-sm"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 20 C 8 11, 16 8, 26 8 L 94 8 C 104 8, 107 15, 102 23 L 80 50 C 76 55, 68 57, 60 57 L 22 57 C 12 57, 8 52, 8 44 Z"
-                    fill="#0284c7"
-                  />
-                  <path
-                    d="M20 54 L 38 78 C 40 81, 44 80, 43 76 L 36 54 Z"
-                    fill="#0284c7"
-                  />
-                  <path
-                    d="M96 20 L 52 86 C 48 92, 40 94, 34 89 C 28 84, 28 76, 33 69 L 75 14 C 78 9, 85 8, 89 11 Z"
-                    fill="#f97316"
-                  />
-                  <path
-                    d="M82 22 L 78 26 L 73 24 L 71 27 L 76 29 L 74 34 L 77 34 L 80 30 L 85 32 L 86 29 L 82 27 L 85 24 Z"
-                    fill="#ffffff"
-                  />
-                </svg>
+                <img
+                  src="/company_logo.png"
+                  alt="ABL Travels Logo"
+                  className="size-9 rounded-lg object-contain bg-white p-0.5 shadow-2xs shrink-0"
+                />
                 <span className="text-xl sm:text-2xl font-black italic text-[#0284c7]">
                   ABL Travels
                 </span>

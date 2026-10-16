@@ -82,19 +82,25 @@ function ColumnHeading({ children }) {
 function LinkList({ links, withArrows = [] }) {
   return (
     <ul className="mt-5 space-y-2.5">
-      {links.map((l) => (
-        <li key={l}>
-          <a
-            href="#"
-            className="group inline-flex items-center gap-1.5 text-[13.5px] text-[#8fa5be] transition-colors hover:text-white"
-          >
-            {l}
-            {withArrows.includes(l) && (
-              <ArrowRight className="size-3 text-[#ff7a00] transition-transform group-hover:translate-x-0.5" />
-            )}
-          </a>
-        </li>
-      ))}
+      {links.map((l) => {
+        let href = '#'
+        if (l === 'Contact Us') href = '/contact'
+        else if (l === 'Visa Services' || l === 'China Visa Processing') href = '/visa'
+        else if (l === 'Home') href = '/'
+        return (
+          <li key={l}>
+            <a
+              href={href}
+              className="group inline-flex items-center gap-1.5 text-[13.5px] text-[#8fa5be] transition-colors hover:text-white"
+            >
+              {l}
+              {withArrows.includes(l) && (
+                <ArrowRight className="size-3 text-[#ff7a00] transition-transform group-hover:translate-x-0.5" />
+              )}
+            </a>
+          </li>
+        )
+      })}
     </ul>
   )
 }

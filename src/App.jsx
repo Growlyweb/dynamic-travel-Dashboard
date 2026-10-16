@@ -8,7 +8,7 @@ import {
 } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { Header, Footer } from '@/components/layout'
-import { HomePage, LoginPage, VisaPage } from '@/pages'
+import { HomePage, LoginPage, VisaPage, ContactPage } from '@/pages'
 import AuthModal from './components/AuthModal'
 import B2BDashboard from './b2b/B2BDashboard'
 
@@ -40,6 +40,20 @@ function VisaPageView({ onOpenLogin, onNavigateToDashboard }) {
       <VisaPage />
 
       <Footer />
+    </div>
+  )
+}
+
+function ContactPageView({ onOpenLogin, onNavigateToDashboard }) {
+  return (
+    <div className="min-h-screen bg-white font-sans text-navy">
+      {/* Main Storefront Header */}
+      <Header
+        onOpenLogin={onOpenLogin}
+        onNavigateToDashboard={onNavigateToDashboard}
+      />
+
+      <ContactPage />
     </div>
   )
 }
@@ -80,6 +94,17 @@ function AppContent() {
           path="/visa"
           element={
             <VisaPageView
+              onOpenLogin={() => navigate('/login')}
+              onNavigateToDashboard={() => navigate('/b2b')}
+            />
+          }
+        />
+
+        {/* 3. Dedicated Contact Us Page */}
+        <Route
+          path="/contact"
+          element={
+            <ContactPageView
               onOpenLogin={() => navigate('/login')}
               onNavigateToDashboard={() => navigate('/b2b')}
             />

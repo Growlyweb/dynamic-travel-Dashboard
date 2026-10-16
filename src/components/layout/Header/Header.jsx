@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Globe,
   LogIn,
@@ -53,8 +53,10 @@ export default function Header({
   onLogout,
 }) {
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
   const location = useLocation()
   const isVisaPage = location?.pathname === '/visa'
+  const isContactPage = location?.pathname === '/contact'
   const isHomePage = location?.pathname === '/'
 
   const { currentUser, isAuthenticated, isB2BPartner, logout } = useAuth()
@@ -78,11 +80,14 @@ export default function Header({
       if (link.label === 'Visa') {
         href = '/visa'
         active = isVisaPage
+      } else if (link.label === 'Contact Us') {
+        href = '/contact'
+        active = isContactPage
       } else if (link.label === 'Home') {
         href = '/'
         active = isHomePage && (!activeHref || activeHref === '/' || activeHref === '#home')
       } else {
-        // For section anchors like #packages, #about, #contact
+        // For section anchors like #packages, #about
         href = !isHomePage && link.href.startsWith('#') ? `/${link.href}` : link.href
         active = isHomePage && (link.href === activeHref || `/${link.href}` === activeHref)
       }
@@ -129,6 +134,12 @@ export default function Header({
             <a
               key={link.label}
               href={link.href}
+              onClick={(e) => {
+                if (link.href.startsWith('/') && !link.href.includes('#')) {
+                  e.preventDefault()
+                  navigate(link.href)
+                }
+              }}
               className={`relative flex items-center text-[14px] xl:text-[15px] font-medium whitespace-nowrap transition-colors hover:text-primary ${
                 link.active ? 'text-primary' : 'text-navy/80'
               }`}
@@ -231,7 +242,13 @@ export default function Header({
               <a
                 key={link.label}
                 href={link.href}
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  setOpen(false)
+                  if (link.href.startsWith('/') && !link.href.includes('#')) {
+                    e.preventDefault()
+                    navigate(link.href)
+                  }
+                }}
                 className={`flex items-center border-b border-slate-50 py-3.5 text-[15px] font-medium ${
                   link.active ? 'text-primary' : 'text-navy/80'
                 }`}
