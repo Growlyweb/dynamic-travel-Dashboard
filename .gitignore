@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 documentation/
+
+# Playwright results and traces
+e2e/.output/

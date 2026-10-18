@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import {
   BrowserRouter,
   Routes,
@@ -10,7 +10,11 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { Header, Footer } from '@/components/layout'
 import { HomePage, LoginPage, VisaPage, ContactPage } from '@/pages'
 import AuthModal from './components/AuthModal'
+import RequireAuth from './components/auth/RequireAuth'
 import B2BDashboard from './b2b/B2BDashboard'
+
+// Opened only from the SMS link, so it stays out of the main bundle
+const VisaStatusPage = lazy(() => import('@/pages/VisaStatusPage'))
 
 function StorefrontView({ onOpenLogin, onNavigateToDashboard }) {
   return (
@@ -54,6 +58,21 @@ function ContactPageView({ onOpenLogin, onNavigateToDashboard }) {
       />
 
       <ContactPage />
+    </div>
+  )
+}
+
+function VisaStatusView({ onOpenLogin, onNavigateToDashboard }) {
+  return (
+    <div className="min-h-screen bg-white font-sans text-navy">
+      <Header
+        onOpenLogin={onOpenLogin}
+        onNavigateToDashboard={onNavigateToDashboard}
+      />
+
+      <Suspense fallback={null}>
+        <VisaStatusPage />
+      </Suspense>
     </div>
   )
 }
@@ -108,6 +127,19 @@ function AppContent() {
               onOpenLogin={() => navigate('/login')}
               onNavigateToDashboard={() => navigate('/b2b')}
             />
+          }
+        />
+
+        {/* Visa status tracking: login required, reached only from the SMS link, never linked on the site */}
+        <Route
+          path="/visa-status/:linkRef"
+          element={
+            <RequireAuth>
+              <VisaStatusView
+                onOpenLogin={() => navigate('/login')}
+                onNavigateToDashboard={() => navigate('/b2b')}
+              />
+            </RequireAuth>
           }
         />
 

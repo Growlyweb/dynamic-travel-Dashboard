@@ -13,19 +13,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import CountryFlag from './CountryFlag'
-
-const COUNTRY_DIAL_CODES = [
-  { code: 'bd', dial: '+880', label: 'Bangladesh (+880)' },
-  { code: 'cn', dial: '+86', label: 'China (+86)' },
-  { code: 'ae', dial: '+971', label: 'UAE (+971)' },
-  { code: 'sa', dial: '+966', label: 'Saudi Arabia (+966)' },
-  { code: 'in', dial: '+91', label: 'India (+91)' },
-  { code: 'my', dial: '+60', label: 'Malaysia (+60)' },
-  { code: 'sg', dial: '+65', label: 'Singapore (+65)' },
-  { code: 'th', dial: '+66', label: 'Thailand (+66)' },
-  { code: 'gb', dial: '+44', label: 'UK (+44)' },
-  { code: 'us', dial: '+1', label: 'USA (+1)' },
-]
+import { COUNTRY_DIAL_CODES } from '@/constants/phone'
 
 // 10 Upload Documents with specific attributes
 const DOCUMENT_FIELDS = [

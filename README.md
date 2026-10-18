@@ -177,3 +177,48 @@ npm run lint
 - **Icons**: Lucide React
 - **Linter**: Oxlint
 - **Version Control**: Git (Branch: `feat/dashboard-ui`)
+
+---
+
+## 🔎 Visa Status Tracking (`/visa-status/:linkRef`)
+
+A private page for clients.
+It is reached only from the link we send to the client's phone, and nothing on the website links to it.
+Visitors who are not logged in are sent to `/login?next=...` and come back to the page after login.
+
+- **Full name** is read-only and comes from the logged-in account.
+- **Steps**: passport number and phone number, `Send OTP`, a 6-digit code, then `Check Visa Status`.
+- **Result** opens in a dialog with the status, the application details, a timeline, and Print / Download Details (the browser's print dialog, so "Save as PDF").
+
+### Demo mode
+
+There is no visa status API yet, so the page runs on a demo service that exists only in development.
+`npm run dev` reads `.env.development`, which sets `VITE_DEMO_MODE=true`.
+A production build never has demo mode, and the page then says the service is not available.
+
+Demo links (open them while logged in):
+
+| Link | Passport | Status |
+|---|---|---|
+| `/visa-status/demo-submitted` | A12345671 | Application Submitted |
+| `/visa-status/demo-processing` | A12345672 | Under Process |
+| `/visa-status/demo-approved` | A12345678 | Visa Approved |
+| `/visa-status/demo-ready` | A12345674 | Ready for Pickup |
+| `/visa-status/demo-collected` | A12345675 | Collected |
+| `/visa-status/demo-docs` | A12345676 | Documents Required |
+| `/visa-status/demo-on_hold` | A12345677 | On Hold |
+| `/visa-status/demo-rejected` | A12345679 | Visa Rejected |
+
+The phone is `+880 1712 3456xx`, where `xx` are the last two digits of the passport.
+The page shows the right values in a yellow box while in demo mode.
+The OTP is `123456`. `000000` answers "expired". Five wrong codes lock the link for 15 minutes.
+
+### Connecting the real API
+
+Replace `loadApi` in `src/services/visaStatus.js` with a client that offers `checkLink`, `sendOtp` and `verifyOtp`.
+The shapes are described at the top of that file.
+The page does not change.
+
+### End-to-end tests
+
+`npm run e2e` runs the Playwright tests in `e2e/` against the dev server, using the Chrome installed on the machine.

@@ -17,6 +17,7 @@ import {
   FileCheck,
 } from 'lucide-react'
 import { useAuth, DEMO_B2B_PARTNER, DEMO_B2C_CUSTOMER } from '../context/AuthContext'
+import { safeRedirectPath } from '@/utils'
 
 /**
  * High-fidelity vector SVG logo for ABL Travels
@@ -158,6 +159,10 @@ export default function LoginPage({ initialMode = 'login' }) {
   const location = useLocation()
   const { login } = useAuth()
 
+  // ?next= carries the page the visitor came for (the visa status link); only paths on this site are followed
+  const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
+  const destinationFor = (role) => nextPath || (role === 'B2B' ? '/b2b' : location.state?.from || '/')
+
   // State
   const [activeTab, setActiveTab] = useState('customer') // 'customer' | 'partner'
   const [authMode, setAuthMode] = useState(initialMode) // 'login' | 'register'
@@ -237,15 +242,7 @@ export default function LoginPage({ initialMode = 'login' }) {
       })
 
       // Redirect after showing positive feedback
-      setTimeout(() => {
-        if (role === 'B2B') {
-          navigate('/b2b')
-        } else {
-          // Check if there was a previous state or redirect to home
-          const destination = location.state?.from || '/'
-          navigate(destination)
-        }
-      }, 700)
+      setTimeout(() => navigate(destinationFor(role)), 700)
     } else {
       setErrorMessage('Authentication failed. Please verify your credentials.')
     }
@@ -276,13 +273,7 @@ export default function LoginPage({ initialMode = 'login' }) {
         name: fullName || res.user.name,
         role,
       })
-      setTimeout(() => {
-        if (role === 'B2B') {
-          navigate('/b2b')
-        } else {
-          navigate('/')
-        }
-      }, 800)
+      setTimeout(() => navigate(destinationFor(role)), 800)
     }
   }
 
@@ -302,10 +293,7 @@ export default function LoginPage({ initialMode = 'login' }) {
         name: res.user.name,
         role,
       })
-      setTimeout(() => {
-        if (role === 'B2B') navigate('/b2b')
-        else navigate('/')
-      }, 700)
+      setTimeout(() => navigate(destinationFor(role)), 700)
     }
   }
 
