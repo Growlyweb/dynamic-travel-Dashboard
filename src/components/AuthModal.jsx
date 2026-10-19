@@ -146,12 +146,8 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
 
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3">
-            <span className="relative flex size-11 items-center justify-center rounded-2xl bg-white shadow-md p-1 border border-white/20">
-              <img
-                src="/company_logo.png"
-                alt="ABL Travels Logo"
-                className="w-full h-full object-contain"
-              />
+            <span className="relative flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-md">
+              <Plane className="size-5 text-white" strokeWidth={2.4} />
             </span>
             <div>
               <span className="text-xl font-extrabold tracking-tight">

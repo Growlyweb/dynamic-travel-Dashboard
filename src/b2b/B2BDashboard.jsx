@@ -112,12 +112,30 @@ export default function B2BDashboard({
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 pb-10 border-b border-white/10 text-xs">
             {/* Col 1: Brand Info */}
             <div className="col-span-2 md:col-span-1 lg:col-span-1 space-y-3">
-              <div className="flex items-center gap-2.5">
-                <img
-                  src="/company_logo.png"
-                  alt="ABL Travels Logo"
-                  className="size-8 rounded-lg object-contain bg-white p-0.5 shadow-xs shrink-0"
-                />
+              <div className="flex items-center gap-2">
+                <svg
+                  viewBox="0 0 120 100"
+                  className="w-8 h-6.5 shrink-0"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 20 C 8 11, 16 8, 26 8 L 94 8 C 104 8, 107 15, 102 23 L 80 50 C 76 55, 68 57, 60 57 L 22 57 C 12 57, 8 52, 8 44 Z"
+                    fill="#0284c7"
+                  />
+                  <path
+                    d="M20 54 L 38 78 C 40 81, 44 80, 43 76 L 36 54 Z"
+                    fill="#0284c7"
+                  />
+                  <path
+                    d="M96 20 L 52 86 C 48 92, 40 94, 34 89 C 28 84, 28 76, 33 69 L 75 14 C 78 9, 85 8, 89 11 Z"
+                    fill="#f97316"
+                  />
+                  <path
+                    d="M82 22 L 78 26 L 73 24 L 71 27 L 76 29 L 74 34 L 77 34 L 80 30 L 85 32 L 86 29 L 82 27 L 85 24 Z"
+                    fill="#ffffff"
+                  />
+                </svg>
                 <span className="text-lg font-black italic text-white tracking-tight">
                   ABL Travels
                 </span>
