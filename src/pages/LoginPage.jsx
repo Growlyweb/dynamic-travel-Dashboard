@@ -27,14 +27,17 @@ export function AblLogo({ className = 'h-10', showTagline = true, light = false 
       <div className="flex items-center gap-2.5">
         <img
           src="/company_logo.png"
-          alt="ABL Travels Logo"
-          className="size-9 rounded-lg object-contain bg-white p-0.5 shadow-2xs shrink-0"
+          alt="ABL Travels"
+          width={48}
+          height={48}
+          draggable={false}
+          className={`${light ? 'bg-white/10' : 'bg-white'} size-10 shrink-0 rounded-lg object-contain p-0.5 drop-shadow-sm`}
         />
 
         {/* Brand Text */}
         <span
           className={`text-2xl font-black italic tracking-tight ${
-            light ? 'text-white' : 'text-[#0284c7]'
+            light ? 'text-white' : 'text-[#2563eb]'
           }`}
           style={{ fontFamily: "'Poppins', sans-serif" }}
         >
@@ -362,10 +365,13 @@ export default function LoginPage({ initialMode = 'login' }) {
             <div className="flex items-center gap-2.5">
               <img
                 src="/company_logo.png"
-                alt="ABL Travels Logo"
-                className="size-8 rounded-lg object-contain bg-white p-0.5 shadow-2xs shrink-0"
+                alt="ABL Travels"
+                width={48}
+                height={48}
+                draggable={false}
+                className="size-10 shrink-0 rounded-lg bg-white object-contain p-0.5 drop-shadow-sm"
               />
-              <span className="text-xl font-black italic text-[#0284c7]">
+              <span className="text-xl font-black italic text-[#2563eb]">
                 ABL Travels
               </span>
             </div>
@@ -374,7 +380,7 @@ export default function LoginPage({ initialMode = 'login' }) {
           {/* Dynamic Content with Smooth Fade Animation */}
           <div key={currentBanner.id} className="animate-fade-in">
             {/* Subheading Tagline */}
-            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[#0284c7] mb-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 mb-3">
               <span>{currentBanner.eyebrow}</span>
               <span className="text-sm font-semibold">›</span>
             </div>
@@ -401,23 +407,23 @@ export default function LoginPage({ initialMode = 'login' }) {
               <div
                 className={`size-13 sm:size-14 rounded-full p-1.5 transition-all duration-300 ${
                   currentBanner.pillIndex === 0
-                    ? 'bg-white shadow-lg ring-3 ring-[#0284c7] scale-110'
+                    ? 'bg-white shadow-lg ring-3 ring-[#2563eb] scale-110'
                     : 'bg-white/90 backdrop-blur-md shadow-md ring-1 ring-white/60 group-hover:scale-105'
                 }`}
               >
                 <div
-                  className={`size-full rounded-full flex items-center justify-center shadow-inner transition-colors ${
+                  className={`size-full rounded-full flex items-center justify-center transition-colors ${
                     currentBanner.pillIndex === 0
-                      ? 'bg-[#0284c7] text-white'
-                      : 'bg-[#1565c0] text-white'
+                      ? 'bg-white text-[#2563eb]'
+                      : 'bg-white text-[#0d2b59]'
                   }`}
                 >
-                  <FileCheck className="size-5 sm:size-6" strokeWidth={2.2} />
+                  <FileCheck className="size-5 sm:size-6" strokeWidth={2} />
                 </div>
               </div>
               <span
                 className={`text-[11px] sm:text-xs font-bold mt-2 leading-tight transition-colors ${
-                  currentBanner.pillIndex === 0 ? 'text-[#0284c7]' : 'text-[#0d2b59]'
+                  currentBanner.pillIndex === 0 ? 'text-[#2563eb]' : 'text-[#0d2b59]'
                 }`}
               >
                 China Visa <br />
@@ -433,23 +439,23 @@ export default function LoginPage({ initialMode = 'login' }) {
               <div
                 className={`size-13 sm:size-14 rounded-full p-1.5 transition-all duration-300 ${
                   currentBanner.pillIndex === 1
-                    ? 'bg-white shadow-lg ring-3 ring-[#0284c7] scale-110'
+                    ? 'bg-white shadow-lg ring-3 ring-[#2563eb] scale-110'
                     : 'bg-white/90 backdrop-blur-md shadow-md ring-1 ring-white/60 group-hover:scale-105'
                 }`}
               >
                 <div
-                  className={`size-full rounded-full flex items-center justify-center shadow-inner transition-colors ${
+                  className={`size-full rounded-full flex items-center justify-center transition-colors ${
                     currentBanner.pillIndex === 1
-                      ? 'bg-[#0284c7] text-white'
-                      : 'bg-[#1565c0] text-white'
+                      ? 'bg-white text-[#2563eb]'
+                      : 'bg-white text-[#0d2b59]'
                   }`}
                 >
-                  <ShieldCheck className="size-5 sm:size-6" strokeWidth={2.2} />
+                  <ShieldCheck className="size-5 sm:size-6" strokeWidth={2} />
                 </div>
               </div>
               <span
                 className={`text-[11px] sm:text-xs font-bold mt-2 leading-tight transition-colors ${
-                  currentBanner.pillIndex === 1 ? 'text-[#0284c7]' : 'text-[#0d2b59]'
+                  currentBanner.pillIndex === 1 ? 'text-[#2563eb]' : 'text-[#0d2b59]'
                 }`}
               >
                 Trusted <br />
@@ -465,23 +471,23 @@ export default function LoginPage({ initialMode = 'login' }) {
               <div
                 className={`size-13 sm:size-14 rounded-full p-1.5 transition-all duration-300 ${
                   currentBanner.pillIndex === 2
-                    ? 'bg-white shadow-lg ring-3 ring-[#0284c7] scale-110'
+                    ? 'bg-white shadow-lg ring-3 ring-[#2563eb] scale-110'
                     : 'bg-white/90 backdrop-blur-md shadow-md ring-1 ring-white/60 group-hover:scale-105'
                 }`}
               >
                 <div
-                  className={`size-full rounded-full flex items-center justify-center shadow-inner transition-colors ${
+                  className={`size-full rounded-full flex items-center justify-center transition-colors ${
                     currentBanner.pillIndex === 2
-                      ? 'bg-[#0284c7] text-white'
-                      : 'bg-[#1565c0] text-white'
+                      ? 'bg-white text-[#2563eb]'
+                      : 'bg-white text-[#0d2b59]'
                   }`}
                 >
-                  <Palmtree className="size-5 sm:size-6" strokeWidth={2.2} />
+                  <Palmtree className="size-5 sm:size-6" strokeWidth={2} />
                 </div>
               </div>
               <span
                 className={`text-[11px] sm:text-xs font-bold mt-2 leading-tight transition-colors ${
-                  currentBanner.pillIndex === 2 ? 'text-[#0284c7]' : 'text-[#0d2b59]'
+                  currentBanner.pillIndex === 2 ? 'text-[#2563eb]' : 'text-[#0d2b59]'
                 }`}
               >
                 Wide Range <br />
@@ -497,23 +503,23 @@ export default function LoginPage({ initialMode = 'login' }) {
               <div
                 className={`size-13 sm:size-14 rounded-full p-1.5 transition-all duration-300 ${
                   currentBanner.pillIndex === 3
-                    ? 'bg-white shadow-lg ring-3 ring-[#0284c7] scale-110'
+                    ? 'bg-white shadow-lg ring-3 ring-[#2563eb] scale-110'
                     : 'bg-white/90 backdrop-blur-md shadow-md ring-1 ring-white/60 group-hover:scale-105'
                 }`}
               >
                 <div
-                  className={`size-full rounded-full flex items-center justify-center shadow-inner transition-colors ${
+                  className={`size-full rounded-full flex items-center justify-center transition-colors ${
                     currentBanner.pillIndex === 3
-                      ? 'bg-[#0284c7] text-white'
-                      : 'bg-[#1565c0] text-white'
+                      ? 'bg-white text-[#2563eb]'
+                      : 'bg-white text-[#0d2b59]'
                   }`}
                 >
-                  <Headphones className="size-5 sm:size-6" strokeWidth={2.2} />
+                  <Headphones className="size-5 sm:size-6" strokeWidth={2} />
                 </div>
               </div>
               <span
                 className={`text-[11px] sm:text-xs font-bold mt-2 leading-tight transition-colors ${
-                  currentBanner.pillIndex === 3 ? 'text-[#0284c7]' : 'text-[#0d2b59]'
+                  currentBanner.pillIndex === 3 ? 'text-[#2563eb]' : 'text-[#0d2b59]'
                 }`}
               >
                 Dedicated <br />
@@ -690,10 +696,13 @@ export default function LoginPage({ initialMode = 'login' }) {
               <div className="flex items-center gap-2">
                 <img
                   src="/company_logo.png"
-                  alt="ABL Travels Logo"
-                  className="size-9 rounded-lg object-contain bg-white p-0.5 shadow-2xs shrink-0"
+                  alt="ABL Travels"
+                  width={48}
+                  height={48}
+                  draggable={false}
+                  className="size-11 shrink-0 rounded-xl bg-white object-contain p-0.5 drop-shadow-sm"
                 />
-                <span className="text-xl sm:text-2xl font-black italic text-[#0284c7]">
+                <span className="text-xl sm:text-2xl font-black italic text-[#2563eb]">
                   ABL Travels
                 </span>
               </div>
@@ -721,7 +730,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                 onClick={() => handleTabSwitch('customer')}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                   activeTab === 'customer'
-                    ? 'bg-[#0284c7] text-white shadow-sm'
+                    ? 'bg-[#2563eb] text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -734,7 +743,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                 onClick={() => handleTabSwitch('partner')}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                   activeTab === 'partner'
-                    ? 'bg-[#0284c7] text-white shadow-sm'
+                    ? 'bg-[#2563eb] text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -789,7 +798,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Enter your full name"
-                        className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#0284c7] transition-all text-slate-800 placeholder:text-slate-400"
+                        className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb] transition-all text-slate-800 placeholder:text-slate-400"
                       />
                     </div>
                   </div>
@@ -810,7 +819,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                       value={emailOrPhone}
                       onChange={(e) => setEmailOrPhone(e.target.value)}
                       placeholder="Enter your email or mobile number"
-                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#0284c7] transition-all text-slate-800 placeholder:text-slate-400"
+                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb] transition-all text-slate-800 placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -830,7 +839,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
-                      className="w-full pl-10 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#0284c7] transition-all text-slate-800 placeholder:text-slate-400"
+                      className="w-full pl-10 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb] transition-all text-slate-800 placeholder:text-slate-400"
                     />
                     <button
                       type="button"
@@ -853,7 +862,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="size-4 rounded text-[#0284c7] border-slate-300 focus:ring-sky-500 cursor-pointer"
+                      className="size-4 rounded text-[#2563eb] border-slate-300 focus:ring-sky-500 cursor-pointer"
                     />
                     <span className="text-xs font-medium text-slate-700">
                       Remember me
@@ -868,7 +877,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                         setForgotSent(false)
                         setForgotEmail(emailOrPhone || '')
                       }}
-                      className="text-xs font-semibold text-[#0284c7] hover:underline cursor-pointer"
+                      className="text-xs font-semibold text-[#2563eb] hover:underline cursor-pointer"
                     >
                       Forgot Password?
                     </button>
@@ -958,12 +967,8 @@ export default function LoginPage({ initialMode = 'login' }) {
                     onClick={() => handleSocialLogin('Facebook')}
                     className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
                   >
-                    <svg
-                      className="size-4 shrink-0 text-[#1877F2]"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="#1877F2">
+                      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
                     </svg>
                     <span>Continue with Facebook</span>
                   </button>
@@ -974,12 +979,8 @@ export default function LoginPage({ initialMode = 'login' }) {
                     onClick={() => handleSocialLogin('Apple')}
                     className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
                   >
-                    <svg
-                      className="size-4 shrink-0 text-black"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.66-.82 1.11-1.96.99-3.1-.96.04-2.12.64-2.8 1.44-.6.69-1.12 1.83-1 2.94 1.07.08 2.15-.46 2.81-1.28z" />
+                    <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="#000000">
+                      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
                     </svg>
                     <span>Continue with Apple</span>
                   </button>
@@ -996,7 +997,7 @@ export default function LoginPage({ initialMode = 'login' }) {
                           setAuthMode('register')
                           setErrorMessage('')
                         }}
-                        className="font-bold text-[#0284c7] hover:underline cursor-pointer inline-flex items-center gap-1"
+                        className="font-bold text-[#2563eb] hover:underline cursor-pointer inline-flex items-center gap-1"
                       >
                         Create Account <ArrowRight className="size-3" />
                       </button>
@@ -1010,13 +1011,27 @@ export default function LoginPage({ initialMode = 'login' }) {
                           setAuthMode('login')
                           setErrorMessage('')
                         }}
-                        className="font-bold text-[#0284c7] hover:underline cursor-pointer inline-flex items-center gap-1"
+                        className="font-bold text-[#2563eb] hover:underline cursor-pointer inline-flex items-center gap-1"
                       >
                         Login <ArrowRight className="size-3" />
                       </button>
                     </span>
                   )}
                 </div>
+
+                {/* Partner registration entry (only on the Partner tab) */}
+                {activeTab === 'partner' && authMode === 'login' && (
+                  <div className="pt-1 text-center text-xs text-slate-500">
+                    Want to join our network?{' '}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/register-partner')}
+                      className="font-bold text-[#ff6b00] hover:underline cursor-pointer inline-flex items-center gap-1"
+                    >
+                      Become a Partner <ArrowRight className="size-3" />
+                    </button>
+                  </div>
+                )}
               </form>
             )}
           </div>

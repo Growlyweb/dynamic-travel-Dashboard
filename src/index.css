@@ -13,6 +13,13 @@
   --color-body: #637083; /* body copy */
   --color-tint: #f2f7fd; /* section background */
 
+  /* Customer portal palette - matches the header brand colors */
+  --color-brand: #0d81f0;
+  --color-brand-dark: #0a5ec0;
+  --color-brand-soft: #eaf3fd;
+  --color-ink: #0b2a4a;
+  --color-canvas: #f5f8fd;
+
   --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-script: "Great Vibes", cursive;
 

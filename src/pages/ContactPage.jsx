@@ -767,7 +767,7 @@ export default function ContactPage() {
                   </a>
                 </li>
                 <li>
-                  <a href="/#packages" className="hover:text-white transition">
+                  <a href="/tour-packages" className="hover:text-white transition">
                     Tour Packages
                   </a>
                 </li>
