@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import {
   BrowserRouter,
   Routes,
@@ -20,7 +20,11 @@ import {
 } from '@/pages'
 import GalleryPage from '@/pages/GalleryPage'
 import AuthModal from './components/AuthModal'
+import RequireAuth from './components/auth/RequireAuth'
 import B2BDashboard from './b2b/B2BDashboard'
+
+// Opened only from the SMS link, so it stays out of the main bundle
+const VisaStatusPage = lazy(() => import('@/pages/VisaStatusPage'))
 import { CustomerProfileProvider } from './context/CustomerProfileContext'
 import CustomerPortal from './customer/CustomerPortal'
 import CustomToursPage from './customer/pages/CustomToursPage'
@@ -156,6 +160,21 @@ function TourDetailPageView({ onOpenLogin, onNavigateToDashboard }) {
   )
 }
 
+function VisaStatusView({ onOpenLogin, onNavigateToDashboard }) {
+  return (
+    <div className="min-h-screen bg-white font-sans text-navy">
+      <Header
+        onOpenLogin={onOpenLogin}
+        onNavigateToDashboard={onNavigateToDashboard}
+      />
+
+      <Suspense fallback={null}>
+        <VisaStatusPage />
+      </Suspense>
+    </div>
+  )
+}
+
 function AppContent() {
   const navigate = useNavigate()
   const {
@@ -218,6 +237,19 @@ function AppContent() {
               onOpenLogin={() => navigate('/login')}
               onNavigateToDashboard={() => navigate('/b2b')}
             />
+          }
+        />
+
+        {/* Visa status tracking — reached only from the SMS link */}
+        <Route
+          path="/visa-status/:linkRef"
+          element={
+            <RequireAuth>
+              <VisaStatusView
+                onOpenLogin={() => navigate('/login')}
+                onNavigateToDashboard={() => navigate('/b2b')}
+              />
+            </RequireAuth>
           }
         />
 
