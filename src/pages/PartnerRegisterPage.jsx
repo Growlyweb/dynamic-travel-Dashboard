@@ -46,16 +46,25 @@ const CURRENT_YEAR = new Date().getFullYear()
 
 export default function PartnerRegisterPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { registerB2B, verifyOtp, resendOtp } = useAuth()
 
   // Form state
   const [fullName, setFullName] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [licenseNo, setLicenseNo] = useState('')
   const [mobile, setMobile] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [address, setAddress] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [agree, setAgree] = useState(false)
+
+  // OTP flow state
+  const [otpMode, setOtpMode] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [otpResent, setOtpResent] = useState(false)
+  const [otpResending, setOtpResending] = useState(false)
 
   // Document uploads: { tradeLicense, businessCard, otherDocs }
   const [docs, setDocs] = useState({ tradeLicense: null, businessCard: null, otherDocs: null })
@@ -83,12 +92,12 @@ export default function PartnerRegisterPage() {
     if (e) e.preventDefault()
     setErrorMessage('')
 
-    if (!fullName.trim() || !mobile.trim() || !email.trim() || !password.trim() || !address.trim()) {
+    if (!fullName.trim() || !companyName.trim() || !licenseNo.trim() || !mobile.trim() || !email.trim() || !password.trim() || !address.trim()) {
       setErrorMessage('Please fill in all required fields.')
       return
     }
     if (!docs.tradeLicense) {
-      setErrorMessage('Trade License is required to become a partner.')
+      setErrorMessage('Trade License document is required to become a partner.')
       return
     }
     if (!agree) {
@@ -97,17 +106,63 @@ export default function PartnerRegisterPage() {
     }
 
     setIsLoading(true)
-    // Simulate a short processing delay (no backend partner endpoint yet)
-    await new Promise((r) => setTimeout(r, 800))
-
-    const res = await login({ email, password, role: 'B2B' })
+    const res = await registerB2B(
+      {
+        name: fullName.trim(),
+        email: email.trim(),
+        phone: mobile.trim(),
+        password,
+        companyName: companyName.trim(),
+        licenseNo: licenseNo.trim(),
+        businessType: 'Travel Agency',
+        address: address.trim(),
+      },
+      {
+        tradeLicense: docs.tradeLicense,
+        businessCard: docs.businessCard,
+        otherDocuments: docs.otherDocs,
+      }
+    )
     setIsLoading(false)
 
     if (res.success) {
-      setSuccess({ name: fullName || res.user.name })
-      setTimeout(() => navigate('/b2b'), 1100)
+      setOtpMode(true)
+      setErrorMessage('')
     } else {
-      setErrorMessage('Could not create your partner account. Please try again.')
+      setErrorMessage(res.message || 'Could not create your partner account. Please try again.')
+    }
+  }
+
+  const handleOtpVerify = async (e) => {
+    e.preventDefault()
+    setOtpError('')
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setOtpError('Please enter the 6-digit verification code.')
+      return
+    }
+
+    setIsLoading(true)
+    const res = await verifyOtp(email.trim(), otpCode.trim())
+    setIsLoading(false)
+
+    if (res.success) {
+      setSuccess({ name: fullName || companyName })
+      setTimeout(() => navigate('/b2b'), 1500)
+    } else {
+      setOtpError(res.message || 'Invalid or expired verification code.')
+    }
+  }
+
+  const handleResendOtp = async () => {
+    setOtpResent(false)
+    setOtpResending(true)
+    const res = await resendOtp(email.trim())
+    setOtpResending(false)
+    if (res.success) {
+      setOtpResent(true)
+      setTimeout(() => setOtpResent(false), 5000)
+    } else {
+      setOtpError(res.message || 'Failed to resend code.')
     }
   }
 
@@ -276,11 +331,80 @@ export default function PartnerRegisterPage() {
                   Welcome, {success.name}!
                 </h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                  Your partner account is ready. Redirecting to your dashboard&hellip;
+                  Your partner account has been created. Redirecting to your dashboard&hellip;
                 </p>
                 <div className="w-40 h-1 bg-slate-100 rounded-full mt-5 overflow-hidden">
                   <div className="h-full bg-[#2563eb] rounded-full animate-pulse w-full" />
                 </div>
+              </div>
+            ) : otpMode ? (
+              <div className="mt-6 space-y-4 animate-fade-in">
+                <div className="text-center">
+                  <div className="size-14 rounded-2xl bg-sky-50 text-[#2563eb] flex items-center justify-center mx-auto mb-3">
+                    <Mail className="size-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Verify Partner Email</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                    We sent a 6-digit verification code to <span className="font-semibold text-slate-800">{email}</span>.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-center">
+                    {otpError}
+                  </div>
+                )}
+
+                {otpResent && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium text-center">
+                    A new verification code was sent to your email!
+                  </div>
+                )}
+
+                <form onSubmit={handleOtpVerify} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-center">
+                      6-Digit Code
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      autoFocus
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="000000"
+                      className="w-full text-center tracking-[0.5em] text-2xl font-bold py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading || otpCode.length !== 6}
+                    className="w-full py-3 sm:py-3.5 px-6 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#f97316] hover:from-[#ea580c] hover:to-[#f97316] text-white font-bold text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify Email & Continue'}
+                  </button>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setOtpMode(false)}
+                      className="text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
+                    >
+                      ← Back to Form
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={otpResending}
+                      onClick={handleResendOtp}
+                      className="text-[#2563eb] hover:underline font-semibold cursor-pointer disabled:opacity-60"
+                    >
+                      {otpResending ? 'Sending...' : 'Resend Code'}
+                    </button>
+                  </div>
+                </form>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -310,6 +434,47 @@ export default function PartnerRegisterPage() {
                       />
                     </div>
                   </div>
+
+                {/* Company Name + License Number */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Agency / Company Name <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Users className="size-4" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="e.g. Skyline Travel Agency"
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Trade License Number <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <FileText className="size-4" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={licenseNo}
+                        onChange={(e) => setLicenseNo(e.target.value)}
+                        placeholder="e.g. TRAD/DNCC/123456"
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">

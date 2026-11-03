@@ -15,10 +15,21 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5174,
     // WSL gets no file change events from Windows drives (/mnt/e), so hot reload serves stale modules
     watch: process.env.WSL_DISTRO_NAME ? { usePolling: true, interval: 300 } : undefined,
     allowedHosts: [
       'symantec-valuation-affordable-runs.trycloudflare.com',
     ],
+    proxy: {
+      // All /api/* requests are forwarded to the Express backend
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        // Pass cookies through so the httpOnly refresh-token cookie works
+        cookieDomainRewrite: 'localhost',
+      },
+    },
   },
 })
