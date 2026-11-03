@@ -105,22 +105,15 @@ function ColumnHeading({ children }) {
 const LINK_HREFS = {
   'Become a Partner': '/register-partner',
   'Tour Packages': '/tour-packages',
-<<<<<<< HEAD
   'Contact Us': '/contact',
   'Visa Services': '/visa',
   'China Visa Processing': '/visa',
   'Home': '/',
-=======
->>>>>>> main
 }
 
 function LinkList({ links, withArrows = [] }) {
   return (
-<<<<<<< HEAD
-<ul role="list" className="mt-5 space-y-3">
-=======
     <ul role="list" className="mt-5 space-y-3">
->>>>>>> main
       {links.map((l) => (
         <li key={l}>
           <a

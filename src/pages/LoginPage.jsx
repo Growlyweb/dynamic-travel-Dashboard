@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -28,11 +28,7 @@ export function AblLogo({ className = 'h-10', showTagline = true, light = false 
       <div className="flex items-center gap-2.5">
         <img
           src="/company_logo.png"
-<<<<<<< HEAD
-alt="ABL Travels"
-=======
           alt="ABL Travels"
->>>>>>> main
           width={48}
           height={48}
           draggable={false}
@@ -170,10 +166,6 @@ export default function LoginPage({ initialMode = 'login' }) {
   const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
   const destinationFor = (role) => nextPath || (role === 'B2B' ? '/b2b' : location.state?.from || '/')
 
-  // ?next= carries the page the visitor came for (the visa status link); only paths on this site are followed
-  const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
-  const destinationFor = (role) => nextPath || (role === 'B2B' ? '/b2b' : location.state?.from || '/')
-
   // State
   const [activeTab, setActiveTab] = useState('customer') // 'customer' | 'partner'
   const [authMode, setAuthMode] = useState(initialMode) // 'login' | 'register'
@@ -250,17 +242,11 @@ export default function LoginPage({ initialMode = 'login' }) {
         name: res.user.name,
         role: res.role || role,
       })
-<<<<<<< HEAD
-
-      // Redirect after showing positive feedback
-      setTimeout(() => navigate(destinationFor(role)), 700)
-=======
       setTimeout(() => navigate(destinationFor(res.role || role)), 700)
     } else if (res.needsVerification) {
       setPendingEmail(res.email || emailOrPhone.trim())
       setOtpMode(true)
       setErrorMessage('')
->>>>>>> main
     } else {
       setErrorMessage(res.message || 'Authentication failed. Please verify your credentials.')
     }
@@ -309,9 +295,6 @@ export default function LoginPage({ initialMode = 'login' }) {
         name: res.user?.name || fullName || pendingEmail,
         role,
       })
-<<<<<<< HEAD
-      setTimeout(() => navigate(destinationFor(role)), 800)
-=======
       setTimeout(() => navigate(destinationFor(role)), 700)
     } else {
       setOtpError(res.message || 'Invalid or expired verification code.')
@@ -329,7 +312,6 @@ export default function LoginPage({ initialMode = 'login' }) {
       setTimeout(() => setOtpResent(false), 5000)
     } else {
       setOtpError(res.message || 'Failed to resend code.')
->>>>>>> main
     }
   }
 
@@ -406,11 +388,7 @@ export default function LoginPage({ initialMode = 'login' }) {
             <div className="flex items-center gap-2.5">
               <img
                 src="/company_logo.png"
-<<<<<<< HEAD
-alt="ABL Travels"
-=======
                 alt="ABL Travels"
->>>>>>> main
                 width={48}
                 height={48}
                 draggable={false}
@@ -741,11 +719,7 @@ alt="ABL Travels"
               <div className="flex items-center gap-2">
                 <img
                   src="/company_logo.png"
-<<<<<<< HEAD
-alt="ABL Travels"
-=======
                   alt="ABL Travels"
->>>>>>> main
                   width={48}
                   height={48}
                   draggable={false}

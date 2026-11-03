@@ -15,7 +15,7 @@ import {
 
 const AuthContext = createContext(null)
 
-// Default demo partner data matching the B2B Dashboard
+// ── Default demo accounts ────────────────────────────────────────────────────
 export const DEMO_B2B_PARTNER = {
   id: 'usr_b2b_1089',
   name: 'Ajmal Travel Agency',
@@ -123,10 +123,28 @@ const REFRESH_BEFORE_MS = 2 * 60 * 1000
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(() => {
+  const saved = loadSession()
+  const [currentUser, setCurrentUser] = useState(saved?.user || null)
+  const [accessToken, setAccessToken] = useState(saved?.token || null)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [authModalDefaultTab, setAuthModalDefaultTab] = useState('b2b')
+
+  const refreshTimerRef = useRef(null)
+
+  const applySession = useCallback((user, token) => {
+    setCurrentUser(user)
+    setAccessToken(token)
+    saveSession(user, token)
+  }, [])
+
+  // ── Refresh access token using the httpOnly cookie ─────────────────────────
+  const refresh = useCallback(async () => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? JSON.parse(saved) : null
+      const body = await apiRefresh()
+      const user = mapUser(body.data?.user, body.data?.partner)
+      const token = body.data?.accessToken
+      if (token) applySession(user, token)
+      return { user, token }
     } catch {
       // Refresh cookie expired or absent — cleanly reset auth state without logging errors
       setCurrentUser(null)
@@ -150,47 +168,46 @@ export function AuthProvider({ children }) {
         setAccessToken(null)
         clearSession()
       }
-    } catch (e) {
-      console.warn('Failed to persist auth to localStorage', e)
+      return
     }
-  }, [currentUser])
 
-  /**
-   * Login method
-   * Handles B2B partner login, customer login, and optional backend API authentication
-   */
-  const login = async ({ email, password, role = 'B2B', isDemo = false }) => {
-    // If backend endpoint is available, we try it first
-    if (!isDemo && email && password) {
+    let cancelled = false
+    ;(async () => {
       try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          const backendUser = data.data?.user || data.user
-          const mappedRole = (backendUser?.role || role).toUpperCase()
-          const userSession = {
-            id: backendUser?._id || backendUser?.id || 'usr_' + Date.now(),
-            name: backendUser?.name || (mappedRole === 'B2B' ? DEMO_B2B_PARTNER.name : 'User'),
-            email: backendUser?.email || email,
-            role: mappedRole,
-            agencyName: backendUser?.partner?.companyName || DEMO_B2B_PARTNER.agencyName,
-            partnerId: backendUser?.partner?.partnerCode || DEMO_B2B_PARTNER.partnerId,
-            initials: (backendUser?.name || 'AR')
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase(),
-            badge: mappedRole === 'B2B' ? 'Verified B2B Partner' : 'Customer',
-            token: data.data?.session?.accessToken || data.token,
-          }
-          setCurrentUser(userSession)
-          return { success: true, user: userSession, role: mappedRole }
-        }
+        const body = await apiMe(accessToken)
+        if (cancelled) return
+        const user = mapUser(body.data?.user, body.data?.partner)
+        applySession(user, accessToken)
+        scheduleRefresh(13 * 60)
+      } catch (err) {
+        if (cancelled) return
+        // Stale token — clear it out cleanly
+        setCurrentUser(null)
+        setAccessToken(null)
+        clearSession()
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [accessToken, applySession, scheduleRefresh])
+
+  useEffect(() => () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current) }, [])
+
+  // ── LOGIN ──────────────────────────────────────────────────────────────────
+  const login = useCallback(async ({ email, password, role = 'B2B', isDemo = false }) => {
+    // 1-Click Quick Demo Login
+    if (isDemo) {
+      const demoCreds = role === 'B2B'
+        ? { email: 'ajmaltravel@gmail.com', password: 'PartnerPass2025!' }
+        : { email: 'sajjad.hossen@gmail.com', password: 'CustomerPass2025!' }
+
+      try {
+        const body = await apiLogin(demoCreds.email, demoCreds.password)
+        const user = mapUser(body.data?.user, body.data?.partner)
+        const token = body.data?.accessToken
+        applySession(user, token)
+        scheduleRefresh(body.data?.expiresIn ?? 900)
+        return { success: true, user, role: user.role }
       } catch {
         // Fallback to local demo session if backend is momentarily offline
         const localUser = role === 'B2B' ? DEMO_B2B_PARTNER : DEMO_B2C_CUSTOMER
@@ -199,26 +216,88 @@ export function AuthProvider({ children }) {
       }
     }
 
-    // Client-side authentication / Demo simulation
-    let userSession
-    if (role === 'B2B') {
-      userSession = {
-        ...DEMO_B2B_PARTNER,
-        email: email || DEMO_B2B_PARTNER.email,
-        name: email && email.includes('@') ? (email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())) : DEMO_B2B_PARTNER.name,
+    // Standard Login
+    try {
+      const body = await apiLogin(email, password)
+      const user = mapUser(body.data?.user, body.data?.partner)
+      const token = body.data?.accessToken
+      const expiresIn = body.data?.expiresIn ?? 900
+
+      applySession(user, token)
+      scheduleRefresh(expiresIn)
+
+      return { success: true, user, role: user.role, needsVerification: false }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 403 && err.code === 'EMAIL_NOT_VERIFIED') {
+          return { success: false, needsVerification: true, email, message: err.message }
+        }
+        return { success: false, message: err.message || 'Invalid email or password.', code: err.code }
       }
-    } else {
-      userSession = {
-        ...DEMO_B2C_CUSTOMER,
-        email: email || DEMO_B2C_CUSTOMER.email,
-      }
+      return { success: false, message: 'Unable to connect to the authentication service.' }
     }
+  }, [applySession, scheduleRefresh])
 
-    setCurrentUser(userSession)
-    return { success: true, user: userSession, role }
-  }
+  const loginAsB2B = useCallback(() => login({ role: 'B2B', isDemo: true }), [login])
+  const loginAsB2C = useCallback(() => login({ role: 'B2C', isDemo: true }), [login])
 
-  const logout = () => {
+  // ── REGISTER (B2C) ─────────────────────────────────────────────────────────
+  const register = useCallback(async ({ name, email, password, phone }) => {
+    try {
+      const body = await apiRegisterB2C({ name, email, password, ...(phone ? { phone } : {}) })
+      return { success: true, needsVerification: true, email, message: body.message }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, message: err.message, code: err.code }
+      }
+      return { success: false, message: 'Network error. Please check your connection.' }
+    }
+  }, [])
+
+  // ── REGISTER B2B ──────────────────────────────────────────────────────────
+  const registerB2B = useCallback(async (fields, files = {}) => {
+    try {
+      const body = await apiRegisterB2B(fields, files)
+      return { success: true, needsVerification: true, email: fields.email, message: body.message }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, message: err.message, code: err.code }
+      }
+      return { success: false, message: 'Network error. Please check your connection.' }
+    }
+  }, [])
+
+  // ── VERIFY OTP ────────────────────────────────────────────────────────────
+  const verifyOtp = useCallback(async (email, otp) => {
+    try {
+      const body = await apiVerifyOtp(email, otp)
+      const user = mapUser(body.data?.user, body.data?.partner)
+      const token = body.data?.accessToken
+      const expiresIn = body.data?.expiresIn ?? 900
+      applySession(user, token)
+      scheduleRefresh(expiresIn)
+      return { success: true, user }
+    } catch (err) {
+      return { success: false, message: err instanceof ApiError ? err.message : 'Network error.' }
+    }
+  }, [applySession, scheduleRefresh])
+
+  // ── RESEND OTP ────────────────────────────────────────────────────────────
+  const resendOtp = useCallback(async (email) => {
+    try {
+      await apiResendOtp(email)
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err instanceof ApiError ? err.message : 'Network error.' }
+    }
+  }, [])
+
+  // ── LOGOUT ────────────────────────────────────────────────────────────────
+  const logout = useCallback(async (allDevices = false) => {
+    try {
+      if (accessToken) await apiLogout(accessToken, allDevices)
+    } catch { /* ignore errors */ }
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
     setCurrentUser(null)
     setAccessToken(null)
     clearSession()
@@ -261,6 +340,12 @@ export function AuthProvider({ children }) {
     isB2BPartner: currentUser?.role === 'B2B',
     isAdmin: currentUser?.role === 'ADMIN',
     login,
+    loginAsB2B,
+    loginAsB2C,
+    register,
+    registerB2B,
+    verifyOtp,
+    resendOtp,
     logout,
     refresh,
     forgotPassword,

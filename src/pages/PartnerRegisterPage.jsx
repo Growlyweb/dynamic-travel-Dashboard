@@ -46,19 +46,10 @@ const CURRENT_YEAR = new Date().getFullYear()
 
 export default function PartnerRegisterPage() {
   const navigate = useNavigate()
-<<<<<<< HEAD
   const { login } = useAuth()
 
   // Form state
   const [fullName, setFullName] = useState('')
-=======
-  const { registerB2B, verifyOtp, resendOtp } = useAuth()
-
-  // Form state
-  const [fullName, setFullName] = useState('')
-  const [companyName, setCompanyName] = useState('')
-  const [licenseNo, setLicenseNo] = useState('')
->>>>>>> main
   const [mobile, setMobile] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -66,16 +57,6 @@ export default function PartnerRegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [agree, setAgree] = useState(false)
 
-<<<<<<< HEAD
-=======
-  // OTP flow state
-  const [otpMode, setOtpMode] = useState(false)
-  const [otpCode, setOtpCode] = useState('')
-  const [otpError, setOtpError] = useState('')
-  const [otpResent, setOtpResent] = useState(false)
-  const [otpResending, setOtpResending] = useState(false)
-
->>>>>>> main
   // Document uploads: { tradeLicense, businessCard, otherDocs }
   const [docs, setDocs] = useState({ tradeLicense: null, businessCard: null, otherDocs: null })
   const [docError, setDocError] = useState('')
@@ -102,20 +83,12 @@ export default function PartnerRegisterPage() {
     if (e) e.preventDefault()
     setErrorMessage('')
 
-<<<<<<< HEAD
     if (!fullName.trim() || !mobile.trim() || !email.trim() || !password.trim() || !address.trim()) {
-=======
-    if (!fullName.trim() || !companyName.trim() || !licenseNo.trim() || !mobile.trim() || !email.trim() || !password.trim() || !address.trim()) {
->>>>>>> main
       setErrorMessage('Please fill in all required fields.')
       return
     }
     if (!docs.tradeLicense) {
-<<<<<<< HEAD
       setErrorMessage('Trade License is required to become a partner.')
-=======
-      setErrorMessage('Trade License document is required to become a partner.')
->>>>>>> main
       return
     }
     if (!agree) {
@@ -124,7 +97,6 @@ export default function PartnerRegisterPage() {
     }
 
     setIsLoading(true)
-<<<<<<< HEAD
     // Simulate a short processing delay (no backend partner endpoint yet)
     await new Promise((r) => setTimeout(r, 800))
 
@@ -136,68 +108,19 @@ export default function PartnerRegisterPage() {
       setTimeout(() => navigate('/b2b'), 1100)
     } else {
       setErrorMessage('Could not create your partner account. Please try again.')
-=======
-    const res = await registerB2B(
-      {
-        name: fullName.trim(),
-        email: email.trim(),
-        phone: mobile.trim(),
-        password,
-        companyName: companyName.trim(),
-        licenseNo: licenseNo.trim(),
-        businessType: 'Travel Agency',
-        address: address.trim(),
-      },
-      {
-        tradeLicense: docs.tradeLicense,
-        businessCard: docs.businessCard,
-        otherDocuments: docs.otherDocs,
-      }
-    )
-    setIsLoading(false)
-
-    if (res.success) {
-      setOtpMode(true)
-      setErrorMessage('')
-    } else {
-      setErrorMessage(res.message || 'Could not create your partner account. Please try again.')
     }
   }
 
-  const handleOtpVerify = async (e) => {
-    e.preventDefault()
-    setOtpError('')
-    if (!otpCode.trim() || otpCode.trim().length !== 6) {
-      setOtpError('Please enter the 6-digit verification code.')
-      return
-    }
-
+  const handleGoogle = async () => {
     setIsLoading(true)
-    const res = await verifyOtp(email.trim(), otpCode.trim())
+    await new Promise((r) => setTimeout(r, 450))
+    const res = await login({ email: 'partner@gmail.com', role: 'B2B', isDemo: true })
     setIsLoading(false)
-
     if (res.success) {
-      setSuccess({ name: fullName || companyName })
-      setTimeout(() => navigate('/b2b'), 1500)
-    } else {
-      setOtpError(res.message || 'Invalid or expired verification code.')
+      setSuccess({ name: res.user.name })
+      setTimeout(() => navigate('/b2b'), 1100)
     }
   }
-
-  const handleResendOtp = async () => {
-    setOtpResent(false)
-    setOtpResending(true)
-    const res = await resendOtp(email.trim())
-    setOtpResending(false)
-    if (res.success) {
-      setOtpResent(true)
-      setTimeout(() => setOtpResent(false), 5000)
-    } else {
-      setOtpError(res.message || 'Failed to resend code.')
->>>>>>> main
-    }
-  }
-
 
   const inputClass =
     'w-full pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb] transition-all text-slate-800 placeholder:text-slate-400'
@@ -363,88 +286,12 @@ export default function PartnerRegisterPage() {
                   Welcome, {success.name}!
                 </h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs">
-<<<<<<< HEAD
                   Your partner account is ready. Redirecting to your dashboard&hellip;
-=======
-                  Your partner account has been created. Redirecting to your dashboard&hellip;
->>>>>>> main
                 </p>
                 <div className="w-40 h-1 bg-slate-100 rounded-full mt-5 overflow-hidden">
                   <div className="h-full bg-[#2563eb] rounded-full animate-pulse w-full" />
                 </div>
               </div>
-<<<<<<< HEAD
-=======
-            ) : otpMode ? (
-              <div className="mt-6 space-y-4 animate-fade-in">
-                <div className="text-center">
-                  <div className="size-14 rounded-2xl bg-sky-50 text-[#2563eb] flex items-center justify-center mx-auto mb-3">
-                    <Mail className="size-7" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900">Verify Partner Email</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                    We sent a 6-digit verification code to <span className="font-semibold text-slate-800">{email}</span>.
-                  </p>
-                </div>
-
-                {otpError && (
-                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-center">
-                    {otpError}
-                  </div>
-                )}
-
-                {otpResent && (
-                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium text-center">
-                    A new verification code was sent to your email!
-                  </div>
-                )}
-
-                <form onSubmit={handleOtpVerify} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-center">
-                      6-Digit Code
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      autoFocus
-                      required
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="000000"
-                      className="w-full text-center tracking-[0.5em] text-2xl font-bold py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb]"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading || otpCode.length !== 6}
-                    className="w-full py-3 sm:py-3.5 px-6 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#f97316] hover:from-[#ea580c] hover:to-[#f97316] text-white font-bold text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                  >
-                    {isLoading ? 'Verifying...' : 'Verify Email & Continue'}
-                  </button>
-
-                  <div className="flex items-center justify-between text-xs pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setOtpMode(false)}
-                      className="text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
-                    >
-                      ← Back to Form
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={otpResending}
-                      onClick={handleResendOtp}
-                      className="text-[#2563eb] hover:underline font-semibold cursor-pointer disabled:opacity-60"
-                    >
-                      {otpResending ? 'Sending...' : 'Resend Code'}
-                    </button>
-                  </div>
-                </form>
-              </div>
->>>>>>> main
             ) : (
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 {errorMessage && (
@@ -474,50 +321,6 @@ export default function PartnerRegisterPage() {
                     </div>
                   </div>
 
-<<<<<<< HEAD
-=======
-                {/* Company Name + License Number */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Agency / Company Name <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <Users className="size-4" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="e.g. Skyline Travel Agency"
-                        className={inputClass}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Trade License Number <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <FileText className="size-4" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        value={licenseNo}
-                        onChange={(e) => setLicenseNo(e.target.value)}
-                        placeholder="e.g. TRAD/DNCC/123456"
-                        className={inputClass}
-                      />
-                    </div>
-                  </div>
-                </div>
-
->>>>>>> main
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Mobile Number <span className="text-rose-500">*</span>
@@ -690,6 +493,29 @@ export default function PartnerRegisterPage() {
                   )}
                 </button>
 
+                {/* Divider OR */}
+                <div className="relative my-4 flex items-center justify-center">
+                  <div className="border-t border-slate-200 w-full" />
+                  <span className="bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 shrink-0">
+                    OR
+                  </span>
+                  <div className="border-t border-slate-200 w-full" />
+                </div>
+
+                {/* Google signup */}
+                <button
+                  type="button"
+                  onClick={handleGoogle}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+                >
+                  <svg className="size-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
 
                 {/* Switch to login */}
                 <div className="pt-2 text-center text-xs text-slate-500">

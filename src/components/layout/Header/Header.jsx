@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-<<<<<<< HEAD
 import { useLocation, useNavigate } from 'react-router-dom'
-=======
-import { useLocation } from 'react-router-dom'
->>>>>>> main
 import {
   Check,
   Copy,
@@ -279,19 +275,12 @@ export default function Header({
   onLogout,
 }) {
   const [open, setOpen] = useState(false)
-<<<<<<< HEAD
-const navigate = useNavigate()
-=======
->>>>>>> main
+  const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const menuToggleRef = useRef(null)
   const location = useLocation()
   const isVisaPage = location?.pathname === '/visa'
-<<<<<<< HEAD
-    const isHomePage = location?.pathname === '/'
-=======
   const isHomePage = location?.pathname === '/'
->>>>>>> main
   const isContactPage = location?.pathname === '/contact'
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
@@ -427,25 +416,18 @@ const navigate = useNavigate()
             <a
               key={link.label}
               href={link.href}
-<<<<<<< HEAD
-onClick={(e) => {
+              onClick={(e) => {
                 if (link.href.startsWith('/') && !link.href.includes('#')) {
                   e.preventDefault()
                   navigate(link.href)
                 }
               }}
-=======
->>>>>>> main
               aria-current={link.active ? 'page' : undefined}
               className={`group relative flex items-center gap-1.5 whitespace-nowrap rounded py-2 text-[14px] font-medium tracking-wide transition-colors xl:text-[15px] ${focusRing} ${link.active
                 ? 'text-[#0a5ec0]'
                 : 'text-[#0b2a4a]/85 hover:text-[#0a5ec0]'
-<<<<<<< HEAD
-                }`}            >
-=======
                 }`}
             >
->>>>>>> main
               <span>{link.label}</span>
 
               <span
@@ -603,8 +585,7 @@ onClick={(e) => {
               <a
                 key={link.label}
                 href={link.href}
-<<<<<<< HEAD
-onClick={(e) => {
+                onClick={(e) => {
                   setOpen(false)
                   if (link.href.startsWith('/') && !link.href.includes('#')) {
                     e.preventDefault()
@@ -613,14 +594,8 @@ onClick={(e) => {
                 }}
                 aria-current={link.active ? 'page' : undefined}
                 className={`flex items-center justify-between border-b border-[#0b2a4a]/10 py-4 text-base font-medium ${link.active ? 'text-[#0a5ec0]' : 'text-[#0b2a4a]'
-                  }`}              >
-=======
-                onClick={() => setOpen(false)}
-                aria-current={link.active ? 'page' : undefined}
-                className={`flex items-center justify-between border-b border-[#0b2a4a]/10 py-4 text-base font-medium ${link.active ? 'text-[#0a5ec0]' : 'text-[#0b2a4a]'
                   }`}
               >
->>>>>>> main
                 {link.label}
                 {link.active && (
                   <span

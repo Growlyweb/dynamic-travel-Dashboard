@@ -164,6 +164,24 @@ export default function UserProfileDropdown({
         </div>
       )}
 
+      {/* B2C Customer Account Quick Jump */}
+      {!isB2B && (
+        <div className="mt-4 pt-3 border-t border-slate-100">
+          <a
+            href="/account"
+            onClick={(e) => {
+              e.preventDefault()
+              onClose()
+              window.location.href = '/account'
+            }}
+            className="flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-xs font-semibold text-[#0066ff] hover:bg-blue-50/70 transition-colors cursor-pointer"
+          >
+            <span>Open Customer Account Portal</span>
+            <ExternalLink className="size-3.5" />
+          </a>
+        </div>
+      )}
+
       {/* Logout Button */}
       <button
         type="button"
