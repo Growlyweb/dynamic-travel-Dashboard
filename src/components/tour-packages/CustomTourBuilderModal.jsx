@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { apiCreateB2CCustomTour } from '@/services/api'
 import {
   X,
   Calendar,
@@ -529,6 +531,7 @@ export default function CustomTourBuilderModal({
   defaultDestination = 'Delhi',
   currentTour = null,
 }) {
+  const { accessToken } = useAuth()
   const [activeTab, setActiveTab] = useState('itinerary') // 'itinerary' | 'ideas'
   const [activePill, setActivePill] = useState('overview')
   const [isFullScreen, setIsFullScreen] = useState(false)
@@ -853,9 +856,53 @@ export default function CustomTourBuilderModal({
   }
 
   // Handle final submission
-  const handleSubmitPlan = (e) => {
+  const handleSubmitPlan = async (e) => {
     e.preventDefault()
     setIsSubmittedSuccess(true)
+    if (accessToken) {
+      try {
+        const dest = (itineraryTitle || defaultDestination || 'Delhi')
+          .replace(/^Custom\s+/i, '')
+          .replace(/\s+Tour$/i, '')
+          .trim() || 'Custom Tour'
+        const startDateVal =
+          departureDate || new Date(Date.now() + 86400000 * 14).toISOString().slice(0, 10)
+        const daysCount = Math.max(1, days.length)
+        const endDateVal = new Date(
+          new Date(startDateVal).getTime() + 86400000 * daysCount
+        )
+          .toISOString()
+          .slice(0, 10)
+
+        await apiCreateB2CCustomTour(
+          {
+            customer: (contactName || 'Traveler').trim(),
+            phone: (contactPhone || '+8801812345679').trim(),
+            destination: dest,
+            travelers: 2,
+            startDate: startDateVal,
+            endDate: endDateVal,
+            hotel: days.find((d) => d.stay)?.stay || 'Standard 4-star hotel',
+            transportation: 'Private car',
+            activities: days.flatMap((d) =>
+              (d.attractions || []).map((a) => (typeof a === 'string' ? a : a.name || 'Sightseeing'))
+            ),
+            requirements: generalNotes || `${daysCount} days custom itinerary: ${itineraryTitle}`,
+            itinerary: days.map((d, index) => ({
+              day: index + 1,
+              title: d.title || `Day ${index + 1}`,
+              description:
+                (d.attractions || [])
+                  .map((a) => (typeof a === 'string' ? a : a.name || 'Sightseeing'))
+                  .join(', ') || 'Exploration and leisure',
+            })),
+          },
+          accessToken
+        )
+      } catch (err) {
+        console.warn('Could not persist custom tour to backend:', err?.message)
+      }
+    }
     setTimeout(() => {
       setIsSubmittedSuccess(false)
       setShowSubmitModal(false)

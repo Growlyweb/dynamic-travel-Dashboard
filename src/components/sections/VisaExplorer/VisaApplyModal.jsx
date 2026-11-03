@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { apiCreateB2CVisaApplication } from '@/services/api'
 import {
   X,
   User,
@@ -221,6 +223,7 @@ export default function VisaApplyModal({
   type = { id: 'tourist', label: 'Tourist Visa' },
   content = null,
 }) {
+  const { accessToken } = useAuth()
   const [formData, setFormData] = useState({
     givenName: '',
     surname: '',
@@ -366,7 +369,7 @@ export default function VisaApplyModal({
   }
 
   // Form Submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const newErrors = {}
 
@@ -390,14 +393,43 @@ export default function VisaApplyModal({
     }
 
     setIsSubmitting(true)
+    let ref = 'APP-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000)
 
-    // Simulate server processing
-    setTimeout(() => {
+    try {
+      if (accessToken) {
+        const fullPhone = `${formData.countryDialCode || '+880'}${formData.contactNumber.trim()}`
+        const res = await apiCreateB2CVisaApplication(
+          {
+            country: country?.name || 'China',
+            applicationType: type?.label || type?.name || 'Tourist Visa',
+            givenName: formData.givenName.trim(),
+            surname: formData.surname.trim(),
+            contactPhone: fullPhone,
+            email: formData.email.trim(),
+            passportNumber: formData.passportNumber.trim(),
+            pickupAddress:
+              formData.submissionMethod === 'pickup'
+                ? formData.pickupAddress.trim()
+                : 'Office Submission',
+            documents: Object.entries(uploadedFiles).map(([k, file]) => ({
+              type: k,
+              name: file?.name || 'Document',
+              url: '',
+            })),
+          },
+          accessToken
+        )
+        if (res?.data?.refNumber || res?.data?.number || res?.data?.id) {
+          ref = res.data.refNumber || res.data.number || res.data.id
+        }
+      }
+    } catch (err) {
+      console.warn('Could not post visa application to backend:', err?.message)
+    } finally {
       setIsSubmitting(false)
       setIsSubmitted(true)
-      const randomRef = 'ABL-' + Math.floor(100000 + Math.random() * 900000)
-      setRefNumber(randomRef)
-    }, 700)
+      setRefNumber(ref)
+    }
   }
 
   const handleResetAndClose = () => {

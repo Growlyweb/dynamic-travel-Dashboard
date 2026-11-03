@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
+import { apiCreateB2CTourBooking, apiAddB2CSavedItem } from '@/services/api'
 import {
   Heart,
   Share2,
@@ -62,6 +64,7 @@ function formatTourDate(isoDate) {
 }
 
 export default function TourDetailPage() {
+  const { accessToken, currentUser } = useAuth()
   const navigate = useNavigate()
   const { slug } = useParams()
   const tour = DELHI_TOUR_DATA
@@ -176,9 +179,65 @@ export default function TourDetailPage() {
     setTimeout(() => setShowShareToast(false), 3000)
   }
 
+  // Wishlist toggle with backend persistence
+  const handleToggleSaved = async () => {
+    const next = !isSaved
+    setIsSaved(next)
+    if (accessToken && next) {
+      try {
+        await apiAddB2CSavedItem(
+          {
+            kind: 'tour',
+            title: tour.title,
+            place: tour.location,
+            countryCode: 'in',
+            image: tour.heroImage,
+            href: window.location.pathname,
+            meta: [
+              { icon: 'time', text: tour.duration },
+              { icon: 'people', text: 'Guided Tour' },
+            ],
+          },
+          accessToken
+        )
+      } catch (err) {
+        console.warn('Could not save to wishlist:', err?.message)
+      }
+    }
+  }
+
   // Handle Booking
-  const handleBookNow = () => {
-    setBookingRef(`DEL-${Math.floor(100000 + Math.random() * 900000)}`)
+  const handleBookNow = async () => {
+    let generatedRef = `DEL-${Math.floor(100000 + Math.random() * 900000)}`
+    if (accessToken) {
+      try {
+        const res = await apiCreateB2CTourBooking(
+          {
+            tourId: 'delhi-day-tour',
+            tourName: tour.title,
+            destination: tour.location?.split(',')[0] || 'Delhi',
+            duration: tour.duration || '8 Hours',
+            startDate: selectedDate || new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10),
+            travelers: participantsSummary,
+            totalPrice,
+            currency: 'USD',
+            image: tour.heroImage || '',
+            contact: {
+              name: currentUser?.name || 'Traveler',
+              email: currentUser?.email || '',
+              phone: currentUser?.phone || '',
+            },
+          },
+          accessToken
+        )
+        if (res?.data?.bookingRef) {
+          generatedRef = res.data.bookingRef
+        }
+      } catch (err) {
+        console.warn('Could not save tour booking to backend:', err?.message)
+      }
+    }
+    setBookingRef(generatedRef)
     setShowBookingModal(true)
   }
 
@@ -298,7 +357,7 @@ export default function TourDetailPage() {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => setIsSaved(!isSaved)}
+                onClick={handleToggleSaved}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                   isSaved
                     ? 'border-rose-200 bg-rose-50 text-rose-600'

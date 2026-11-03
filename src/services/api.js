@@ -47,11 +47,22 @@ async function request(path, options = {}) {
 const get = (path, headers) => request(path, { method: 'GET', headers })
 const post = (path, payload, headers) =>
   request(path, { method: 'POST', body: JSON.stringify(payload), headers })
+const patch = (path, payload, headers) =>
+  request(path, { method: 'PATCH', body: JSON.stringify(payload), headers })
 const del = (path, headers) => request(path, { method: 'DELETE', headers })
 
 // Attach the access token to protected requests
 function authHeaders(token) {
   return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+const toQueryString = (params = {}) => {
+  const q = new URLSearchParams()
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') q.append(k, v)
+  })
+  const s = q.toString()
+  return s ? `?${s}` : ''
 }
 
 // ============================================================
@@ -78,7 +89,6 @@ export async function apiRegisterB2B(payload, files = {}) {
     method: 'POST',
     credentials: 'include',
     body: form,
-    // Do NOT set Content-Type — browser adds the boundary automatically for multipart
   })
 
   let body
@@ -126,5 +136,130 @@ export const apiResetPassword = (email, token, newPassword) =>
 export const apiChangePassword = (currentPassword, newPassword, token) =>
   post('/auth/change-password', { currentPassword, newPassword }, authHeaders(token))
 
-export { ApiError }
+// ============================================================
+// B2B PARTNER ENDPOINTS
+// ============================================================
 
+/** GET /api/b2b/overview */
+export const apiGetB2BOverview = (token) => get('/b2b/overview', authHeaders(token))
+
+/** GET /api/b2b/profile */
+export const apiGetB2BProfile = (token) => get('/b2b/profile', authHeaders(token))
+
+/** PATCH /api/b2b/profile */
+export const apiUpdateB2BProfile = (payload, token) =>
+  patch('/b2b/profile', payload, authHeaders(token))
+
+/** GET /api/b2b/applications */
+export const apiGetB2BApplications = (query, token) =>
+  get(`/b2b/applications${toQueryString(query)}`, authHeaders(token))
+
+/** POST /api/b2b/applications */
+export const apiCreateB2BApplication = (payload, token) =>
+  post('/b2b/applications', payload, authHeaders(token))
+
+/** GET /api/b2b/applications/:id */
+export const apiGetB2BApplication = (id, token) =>
+  get(`/b2b/applications/${id}`, authHeaders(token))
+
+/** GET /api/b2b/pickups */
+export const apiGetB2BPickups = (query, token) =>
+  get(`/b2b/pickups${toQueryString(query)}`, authHeaders(token))
+
+/** POST /api/b2b/pickups */
+export const apiCreateB2BPickup = (payload, token) =>
+  post('/b2b/pickups', payload, authHeaders(token))
+
+/** GET /api/b2b/commissions */
+export const apiGetB2BCommissions = (token) =>
+  get('/b2b/commissions', authHeaders(token))
+
+/** GET /api/b2b/withdrawals */
+export const apiGetB2BWithdrawals = (query, token) =>
+  get(`/b2b/withdrawals${toQueryString(query)}`, authHeaders(token))
+
+/** POST /api/b2b/withdrawals */
+export const apiCreateB2BWithdrawal = (payload, token) =>
+  post('/b2b/withdrawals', payload, authHeaders(token))
+
+/** GET /api/b2b/documents */
+export const apiGetB2BDocuments = (token) =>
+  get('/b2b/documents', authHeaders(token))
+
+// ============================================================
+// B2C CUSTOMER ENDPOINTS
+// ============================================================
+
+/** GET /api/b2c/overview */
+export const apiGetB2COverview = (token) =>
+  get('/b2c/overview', authHeaders(token))
+
+/** GET /api/b2c/profile */
+export const apiGetB2CProfile = (token) =>
+  get('/b2c/profile', authHeaders(token))
+
+/** PATCH /api/b2c/profile */
+export const apiUpdateB2CProfile = (payload, token) =>
+  patch('/b2c/profile', payload, authHeaders(token))
+
+/** GET /api/b2c/visa-applications */
+export const apiGetB2CVisaApplications = (query, token) =>
+  get(`/b2c/visa-applications${toQueryString(query)}`, authHeaders(token))
+
+/** POST /api/b2c/visa-applications */
+export const apiCreateB2CVisaApplication = (payload, token) =>
+  post('/b2c/visa-applications', payload, authHeaders(token))
+
+/** GET /api/b2c/tours/bookings */
+export const apiGetB2CTourBookings = (token) =>
+  get('/b2c/tours/bookings', authHeaders(token))
+
+/** POST /api/b2c/tours/bookings */
+export const apiCreateB2CTourBooking = (payload, token) =>
+  post('/b2c/tours/bookings', payload, authHeaders(token))
+
+/** GET /api/tours/custom-requests (Customer's own custom tours) */
+export const apiGetB2CCustomTours = (query, token) =>
+  get(`/tours/custom-requests${toQueryString(query)}`, authHeaders(token))
+
+/** POST /api/tours/custom-requests (Create custom tour request) */
+export const apiCreateB2CCustomTour = (payload, token) =>
+  post('/tours/custom-requests', payload, authHeaders(token))
+
+/** GET /api/b2c/saved */
+export const apiGetB2CSavedItems = (token) =>
+  get('/b2c/saved', authHeaders(token))
+
+/** POST /api/b2c/saved */
+export const apiAddB2CSavedItem = (payload, token) =>
+  post('/b2c/saved', payload, authHeaders(token))
+
+/** DELETE /api/b2c/saved/:id */
+export const apiRemoveB2CSavedItem = (id, token) =>
+  del(`/b2c/saved/${id}`, authHeaders(token))
+
+// ============================================================
+// PUBLIC STOREFRONT ENDPOINTS
+// ============================================================
+
+/** GET /api/visa/public/countries */
+export const apiGetPublicVisaCountries = () =>
+  get('/visa/public/countries')
+
+/** GET /api/visa/public/types */
+export const apiGetPublicVisaTypes = () =>
+  get('/visa/public/types')
+
+/** GET /api/tours */
+export const apiGetPublicTours = (query) =>
+  get(`/tours${toQueryString(query)}`)
+
+/** GET /api/tours/:id */
+export const apiGetPublicTourDetail = (id) =>
+  get(`/tours/${id}`)
+
+/** POST /api/marketing/subscribers */
+export const apiSubscribeNewsletter = (email) =>
+  post('/marketing/subscribers', { email })
+
+export { ApiError }

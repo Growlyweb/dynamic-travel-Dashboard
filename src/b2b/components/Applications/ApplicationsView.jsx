@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   Plus,
   Search,
@@ -19,8 +19,11 @@ import {
 } from 'lucide-react'
 import CountryFlag from '../common/CountryFlag'
 import { APPLICATION_STATUS_TABS, APPLICATIONS_DATA } from '../../data/applicationsData'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2BApplications } from '@/services/api'
 
 export default function ApplicationsView({ onOpenNewModal, onSelectApplication }) {
+  const { accessToken } = useAuth()
   const [activeStatusTab, setActiveStatusTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedType, setSelectedType] = useState('')
@@ -29,6 +32,30 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
   const [copiedPassport, setCopiedPassport] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [openActionMenuId, setOpenActionMenuId] = useState(null)
+  const [rawApplications, setRawApplications] = useState(APPLICATIONS_DATA)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const fetchApplications = useCallback(async () => {
+    if (!accessToken) return
+    setIsLoading(true)
+    try {
+      const res = await apiGetB2BApplications({ page: 1, limit: 100 }, accessToken)
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        // Merge live applications with seed mocks (avoid duplicate numbers)
+        const liveMap = new Set(res.data.map((item) => item.number || item.appRef))
+        const unseededMocks = APPLICATIONS_DATA.filter((mock) => !liveMap.has(mock.appRef))
+        setRawApplications([...res.data, ...unseededMocks])
+      }
+    } catch (err) {
+      console.warn('Using local applications data fallback:', err?.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    fetchApplications()
+  }, [fetchApplications])
 
   // Copy Passport Number
   const handleCopyPassport = (passportNo) => {
@@ -39,7 +66,7 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
 
   // Filter Data
   const filteredApplications = useMemo(() => {
-    return APPLICATIONS_DATA.filter((app) => {
+    return rawApplications.filter((app) => {
       // Status Filter
       if (activeStatusTab !== 'all' && app.statusKey !== activeStatusTab) {
         return false
@@ -55,14 +82,15 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
       // Search Filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase()
-        const matchesName = app.applicantName.toLowerCase().includes(query)
-        const matchesPassport = app.passportNo.toLowerCase().includes(query)
-        const matchesCountry = app.country.toLowerCase().includes(query)
-        if (!matchesName && !matchesPassport && !matchesCountry) return false
+        const matchesName = (app.applicantName || '').toLowerCase().includes(query)
+        const matchesPassport = (app.passportNo || '').toLowerCase().includes(query)
+        const matchesCountry = (app.country || '').toLowerCase().includes(query)
+        const matchesRef = (app.appRef || app.number || '').toLowerCase().includes(query)
+        if (!matchesName && !matchesPassport && !matchesCountry && !matchesRef) return false
       }
       return true
     })
-  }, [activeStatusTab, selectedType, selectedCountry, searchQuery])
+  }, [rawApplications, activeStatusTab, selectedType, selectedCountry, searchQuery])
 
   // Reset all filters
   const handleReset = () => {

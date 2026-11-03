@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CountryFlag from '@/components/sections/VisaExplorer/CountryFlag'
 import { useListFilters } from '@/hooks'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2CVisaApplications } from '@/services/api'
 import DataTable from '../components/DataTable'
 import VisaDetailsModal from '../components/VisaDetailsModal'
 import FilterBar from '../components/FilterBar'
@@ -30,8 +32,24 @@ function matches(app, filters) {
 }
 
 export default function VisaApplicationsPage() {
-  const list = useListFilters(VISA_APPLICATIONS, { initial: INITIAL_FILTERS, predicate: matches })
+  const { accessToken } = useAuth()
+  const [liveApplications, setLiveApplications] = useState([])
+  const activeApplications = liveApplications.length > 0 ? liveApplications : VISA_APPLICATIONS
+  const list = useListFilters(activeApplications, { initial: INITIAL_FILTERS, predicate: matches })
   const [selected, setSelected] = useState(null)
+
+  useEffect(() => {
+    if (!accessToken) return
+    apiGetB2CVisaApplications({}, accessToken)
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setLiveApplications(res.data)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load customer visa applications:', err?.message)
+      })
+  }, [accessToken])
 
   const columns = [
     {
