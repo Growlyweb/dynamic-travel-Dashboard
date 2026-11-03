@@ -1,8 +1,21 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import {
+  apiLogin,
+  apiRegisterB2C,
+  apiRegisterB2B,
+  apiVerifyOtp,
+  apiResendOtp,
+  apiRefresh,
+  apiLogout,
+  apiMe,
+  apiForgotPassword,
+  apiResetPassword,
+  ApiError,
+} from '../services/api'
 
 const AuthContext = createContext(null)
 
-// Default demo partner data matching the design screenshot
+// Default demo partner data matching the B2B Dashboard
 export const DEMO_B2B_PARTNER = {
   id: 'usr_b2b_1089',
   name: 'Ajmal Travel Agency',
@@ -28,39 +41,114 @@ export const DEMO_B2C_CUSTOMER = {
   phone: '+880 1812-345678',
 }
 
+// ── Storage helpers ──────────────────────────────────────────────────────────
 const STORAGE_KEY = 'abl_travels_auth_session'
 
+/**
+ * Check if a string looks like a valid, unexpired JWT.
+ */
+function isValidJwt(token) {
+  if (typeof token !== 'string') return false
+  const parts = token.split('.')
+  if (parts.length !== 3) return false
+  try {
+    const payload = JSON.parse(atob(parts[1]))
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return false // Token is already expired
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
+function saveSession(user, token) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, token }))
+  } catch { /* ignore quota errors */ }
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    // Backward compatibility for legacy session format
+    if (parsed && !parsed.user && parsed.email) {
+      const valid = isValidJwt(parsed.token) ? parsed.token : null
+      return { user: parsed, token: valid }
+    }
+    if (parsed?.token && !isValidJwt(parsed.token)) {
+      // Clear out fake or legacy non-JWT tokens so they don't cause 401s on mount
+      parsed.token = null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function clearSession() {
+  try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+}
+
+// ── User shape helpers ───────────────────────────────────────────────────────
+function mapUser(backendUser, partner = null) {
+  const name = backendUser?.name || backendUser?.email || 'User'
+  const role = (backendUser?.role || 'B2C').toUpperCase()
+  return {
+    id: backendUser?._id || backendUser?.id,
+    name,
+    email: backendUser?.email,
+    role,
+    phone: backendUser?.phone || null,
+    avatar: backendUser?.avatar || null,
+    isEmailVerified: backendUser?.isEmailVerified ?? backendUser?.emailVerified ?? false,
+    initials: name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+    badge: role === 'B2B' ? 'B2B Partner' : role === 'ADMIN' ? 'Admin' : 'Customer',
+    agencyName: partner?.companyName || (role === 'B2B' ? DEMO_B2B_PARTNER.agencyName : null),
+    partnerId: partner?.licenseNo || partner?.partnerCode || (role === 'B2B' ? DEMO_B2B_PARTNER.partnerId : null),
+    commissionRate: partner?.commissionRate ? `${partner.commissionRate}%` : (role === 'B2B' ? '12%' : null),
+    partnerStatus: partner?.approvalStatus || partner?.status || null,
+  }
+}
+
+// ── Refresh token timer ──────────────────────────────────────────────────────
+const REFRESH_BEFORE_MS = 2 * 60 * 1000
+
+// ── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // Automatically migrate legacy demo accounts to match exact designs
-        if (parsed.email === 'partner@abltravels.com' || parsed.email === 'ajmaltravel@gmail.com') {
-          return DEMO_B2B_PARTNER
-        }
-        if (parsed.email === 'traveler@gmail.com' || parsed.email === 'sajjad.hossen@gmail.com') {
-          return DEMO_B2C_CUSTOMER
-        }
-        return parsed
-      }
-      return null
+      return saved ? JSON.parse(saved) : null
     } catch {
+      // Refresh cookie expired or absent — cleanly reset auth state without logging errors
+      setCurrentUser(null)
+      setAccessToken(null)
+      clearSession()
       return null
     }
-  })
+  }, [applySession])
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
-  const [authModalDefaultTab, setAuthModalDefaultTab] = useState('b2b') // 'b2b' | 'customer'
+  // ── Schedule the next token refresh ───────────────────────────────────────
+  const scheduleRefresh = useCallback((expiresInSeconds) => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
+    const delay = Math.max((expiresInSeconds * 1000) - REFRESH_BEFORE_MS, 5000)
+    refreshTimerRef.current = setTimeout(() => refresh(), delay)
+  }, [refresh])
 
-  // Persist session to localStorage
+  // ── On mount: validate stored session ─────────────────────────────────────
   useEffect(() => {
-    try {
-      if (currentUser) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser))
-      } else {
-        localStorage.removeItem(STORAGE_KEY)
+    if (!accessToken || !isValidJwt(accessToken)) {
+      if (accessToken && !isValidJwt(accessToken)) {
+        setAccessToken(null)
+        clearSession()
       }
     } catch (e) {
       console.warn('Failed to persist auth to localStorage', e)
@@ -86,26 +174,28 @@ export function AuthProvider({ children }) {
           const mappedRole = (backendUser?.role || role).toUpperCase()
           const userSession = {
             id: backendUser?._id || backendUser?.id || 'usr_' + Date.now(),
-            name: backendUser?.name || (mappedRole === 'B2B' ? DEMO_B2B_PARTNER.name : DEMO_B2C_CUSTOMER.name),
+            name: backendUser?.name || (mappedRole === 'B2B' ? DEMO_B2B_PARTNER.name : 'User'),
             email: backendUser?.email || email,
             role: mappedRole,
             agencyName: backendUser?.partner?.companyName || DEMO_B2B_PARTNER.agencyName,
             partnerId: backendUser?.partner?.partnerCode || DEMO_B2B_PARTNER.partnerId,
-            initials: (backendUser?.name || (mappedRole === 'B2B' ? 'A' : 'SH'))
+            initials: (backendUser?.name || 'AR')
               .split(' ')
               .map((n) => n[0])
               .join('')
               .slice(0, 2)
               .toUpperCase(),
-            badge: mappedRole === 'B2B' ? 'B2B Partner' : 'Customer',
-            avatar: mappedRole === 'B2B' ? null : (backendUser?.avatar || DEMO_B2C_CUSTOMER.avatar),
+            badge: mappedRole === 'B2B' ? 'Verified B2B Partner' : 'Customer',
             token: data.data?.session?.accessToken || data.token,
           }
           setCurrentUser(userSession)
           return { success: true, user: userSession, role: mappedRole }
         }
       } catch {
-        // Backend not running; gracefully fall back to local authenticated state
+        // Fallback to local demo session if backend is momentarily offline
+        const localUser = role === 'B2B' ? DEMO_B2B_PARTNER : DEMO_B2C_CUSTOMER
+        applySession(localUser, null)
+        return { success: true, user: localUser, role: localUser.role }
       }
     }
 
@@ -115,17 +205,12 @@ export function AuthProvider({ children }) {
       userSession = {
         ...DEMO_B2B_PARTNER,
         email: email || DEMO_B2B_PARTNER.email,
-        name: email && email !== DEMO_B2B_PARTNER.email && email.includes('@')
-          ? email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-          : DEMO_B2B_PARTNER.name,
+        name: email && email.includes('@') ? (email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())) : DEMO_B2B_PARTNER.name,
       }
     } else {
       userSession = {
         ...DEMO_B2C_CUSTOMER,
         email: email || DEMO_B2C_CUSTOMER.email,
-        name: email && email !== DEMO_B2C_CUSTOMER.email && email.includes('@')
-          ? email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-          : DEMO_B2C_CUSTOMER.name,
       }
     }
 
@@ -133,42 +218,53 @@ export function AuthProvider({ children }) {
     return { success: true, user: userSession, role }
   }
 
-  const loginAsB2B = () => {
-    setCurrentUser(DEMO_B2B_PARTNER)
-    return DEMO_B2B_PARTNER
-  }
-
-  const loginAsB2C = () => {
-    setCurrentUser(DEMO_B2C_CUSTOMER)
-    return DEMO_B2C_CUSTOMER
-  }
-
   const logout = () => {
     setCurrentUser(null)
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      // ignore
-    }
-  }
+    setAccessToken(null)
+    clearSession()
+  }, [accessToken])
 
-  const openLoginModal = (tab = 'b2b') => {
+  // ── FORGOT PASSWORD ───────────────────────────────────────────────────────
+  const forgotPassword = useCallback(async (email) => {
+    try {
+      await apiForgotPassword(email)
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err instanceof ApiError ? err.message : 'Network error.' }
+    }
+  }, [])
+
+  // ── RESET PASSWORD ────────────────────────────────────────────────────────
+  const resetPassword = useCallback(async (email, token, newPassword) => {
+    try {
+      await apiResetPassword(email, token, newPassword)
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err instanceof ApiError ? err.message : 'Network error.' }
+    }
+  }, [])
+
+  // ── MODAL HELPERS ─────────────────────────────────────────────────────────
+  const openLoginModal = useCallback((tab = 'b2b') => {
     setAuthModalDefaultTab(tab)
     setIsAuthModalOpen(true)
-  }
+  }, [])
 
-  const closeLoginModal = () => {
+  const closeLoginModal = useCallback(() => {
     setIsAuthModalOpen(false)
-  }
+  }, [])
 
   const value = {
     currentUser,
+    accessToken,
     isAuthenticated: Boolean(currentUser),
     isB2BPartner: currentUser?.role === 'B2B',
+    isAdmin: currentUser?.role === 'ADMIN',
     login,
-    loginAsB2B,
-    loginAsB2C,
     logout,
+    refresh,
+    forgotPassword,
+    resetPassword,
     isAuthModalOpen,
     authModalDefaultTab,
     openLoginModal,

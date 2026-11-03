@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -28,7 +28,11 @@ export function AblLogo({ className = 'h-10', showTagline = true, light = false 
       <div className="flex items-center gap-2.5">
         <img
           src="/company_logo.png"
+<<<<<<< HEAD
 alt="ABL Travels"
+=======
+          alt="ABL Travels"
+>>>>>>> main
           width={48}
           height={48}
           draggable={false}
@@ -160,7 +164,11 @@ const CURRENT_YEAR = new Date().getFullYear()
 export default function LoginPage({ initialMode = 'login' }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login } = useAuth()
+  const { login, register, verifyOtp, resendOtp, forgotPassword } = useAuth()
+
+  // ?next= carries the page the visitor came for (the visa status link); only paths on this site are followed
+  const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
+  const destinationFor = (role) => nextPath || (role === 'B2B' ? '/b2b' : location.state?.from || '/')
 
   // ?next= carries the page the visitor came for (the visa status link); only paths on this site are followed
   const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
@@ -169,8 +177,8 @@ export default function LoginPage({ initialMode = 'login' }) {
   // State
   const [activeTab, setActiveTab] = useState('customer') // 'customer' | 'partner'
   const [authMode, setAuthMode] = useState(initialMode) // 'login' | 'register'
-  const [emailOrPhone, setEmailOrPhone] = useState(DEMO_B2C_CUSTOMER.email)
-  const [password, setPassword] = useState('CustomerPass2025!')
+  const [emailOrPhone, setEmailOrPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
@@ -180,6 +188,14 @@ export default function LoginPage({ initialMode = 'login' }) {
   const [showForgotModal, setShowForgotModal] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
+
+  // OTP verification state
+  const [otpMode, setOtpMode] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [otpResending, setOtpResending] = useState(false)
+  const [otpResent, setOtpResent] = useState(false)
 
   // Carousel banner active slide & hover pause
   const [activeSlide, setActiveSlide] = useState(0)
@@ -201,13 +217,9 @@ export default function LoginPage({ initialMode = 'login' }) {
   const handleTabSwitch = (tab) => {
     setActiveTab(tab)
     setErrorMessage('')
-    if (tab === 'customer') {
-      setEmailOrPhone(DEMO_B2C_CUSTOMER.email)
-      setPassword('CustomerPass2025!')
-    } else {
-      setEmailOrPhone(DEMO_B2B_PARTNER.email)
-      setPassword('PartnerPass2025!')
-    }
+    setOtpMode(false)
+    setEmailOrPhone('')
+    setPassword('')
   }
 
   // Handle Login submission
@@ -225,33 +237,36 @@ export default function LoginPage({ initialMode = 'login' }) {
     }
 
     setIsLoading(true)
-
-    // Authentic slight latency for feedback
-    await new Promise((r) => setTimeout(r, 600))
-
     const role = activeTab === 'partner' ? 'B2B' : 'B2C'
     const res = await login({
-      email: emailOrPhone,
+      email: emailOrPhone.trim(),
       password,
       role,
     })
-
     setIsLoading(false)
 
     if (res.success) {
       setLoginSuccess({
         name: res.user.name,
-        role,
+        role: res.role || role,
       })
+<<<<<<< HEAD
 
       // Redirect after showing positive feedback
       setTimeout(() => navigate(destinationFor(role)), 700)
+=======
+      setTimeout(() => navigate(destinationFor(res.role || role)), 700)
+    } else if (res.needsVerification) {
+      setPendingEmail(res.email || emailOrPhone.trim())
+      setOtpMode(true)
+      setErrorMessage('')
+>>>>>>> main
     } else {
-      setErrorMessage('Authentication failed. Please verify your credentials.')
+      setErrorMessage(res.message || 'Authentication failed. Please verify your credentials.')
     }
   }
 
-  // Handle Register submission
+  // Handle Register submission (Customer)
   const handleRegister = async (e) => {
     e.preventDefault()
     setErrorMessage('')
@@ -261,22 +276,60 @@ export default function LoginPage({ initialMode = 'login' }) {
     }
 
     setIsLoading(true)
-    await new Promise((r) => setTimeout(r, 700))
-    const role = activeTab === 'partner' ? 'B2B' : 'B2C'
-
-    const res = await login({
-      email: emailOrPhone,
+    const res = await register({
+      name: fullName.trim(),
+      email: emailOrPhone.trim(),
       password,
-      role,
     })
+    setIsLoading(false)
 
+    if (res.success) {
+      setPendingEmail(emailOrPhone.trim())
+      setOtpMode(true)
+      setErrorMessage('')
+    } else {
+      setErrorMessage(res.message || 'Registration failed. Please try again.')
+    }
+  }
+
+  // OTP verify handler
+  const handleOtpVerify = async (e) => {
+    e.preventDefault()
+    setOtpError('')
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setOtpError('Please enter the 6-digit verification code.')
+      return
+    }
+    setIsLoading(true)
+    const res = await verifyOtp(pendingEmail, otpCode.trim())
     setIsLoading(false)
     if (res.success) {
+      const role = activeTab === 'partner' ? 'B2B' : 'B2C'
       setLoginSuccess({
-        name: fullName || res.user.name,
+        name: res.user?.name || fullName || pendingEmail,
         role,
       })
+<<<<<<< HEAD
       setTimeout(() => navigate(destinationFor(role)), 800)
+=======
+      setTimeout(() => navigate(destinationFor(role)), 700)
+    } else {
+      setOtpError(res.message || 'Invalid or expired verification code.')
+    }
+  }
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    setOtpResent(false)
+    setOtpResending(true)
+    const res = await resendOtp(pendingEmail)
+    setOtpResending(false)
+    if (res.success) {
+      setOtpResent(true)
+      setTimeout(() => setOtpResent(false), 5000)
+    } else {
+      setOtpError(res.message || 'Failed to resend code.')
+>>>>>>> main
     }
   }
 
@@ -353,7 +406,11 @@ export default function LoginPage({ initialMode = 'login' }) {
             <div className="flex items-center gap-2.5">
               <img
                 src="/company_logo.png"
+<<<<<<< HEAD
 alt="ABL Travels"
+=======
+                alt="ABL Travels"
+>>>>>>> main
                 width={48}
                 height={48}
                 draggable={false}
@@ -684,7 +741,11 @@ alt="ABL Travels"
               <div className="flex items-center gap-2">
                 <img
                   src="/company_logo.png"
+<<<<<<< HEAD
 alt="ABL Travels"
+=======
+                  alt="ABL Travels"
+>>>>>>> main
                   width={48}
                   height={48}
                   draggable={false}
@@ -757,6 +818,78 @@ alt="ABL Travels"
                 <div className="w-40 h-1 bg-slate-100 rounded-full mt-5 overflow-hidden">
                   <div className="h-full bg-primary rounded-full animate-pulse w-full" />
                 </div>
+              </div>
+            ) : otpMode ? (
+              <div className="mt-5 space-y-4 animate-fade-in">
+                <div className="text-center">
+                  <div className="size-14 rounded-2xl bg-sky-50 text-[#2563eb] flex items-center justify-center mx-auto mb-3">
+                    <Mail className="size-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Verify Your Email</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                    Enter the 6-digit code sent to <span className="font-semibold text-slate-800">{pendingEmail}</span>.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-center">
+                    {otpError}
+                  </div>
+                )}
+
+                {otpResent && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium text-center">
+                    A new verification code was emailed!
+                  </div>
+                )}
+
+                <form onSubmit={handleOtpVerify} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-center">
+                      Verification Code
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      autoFocus
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="000000"
+                      className="w-full text-center tracking-[0.5em] text-2xl font-bold py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading || otpCode.length !== 6}
+                    className="w-full py-3 sm:py-3.5 px-6 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#f97316] hover:from-[#ea580c] hover:to-[#f97316] text-white font-bold text-sm sm:text-base shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify & Continue'}
+                  </button>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpMode(false)
+                        setOtpError('')
+                      }}
+                      className="text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
+                    >
+                      ← Back to Login
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={otpResending}
+                      onClick={handleResendOtp}
+                      className="text-[#2563eb] hover:underline font-semibold cursor-pointer disabled:opacity-60"
+                    >
+                      {otpResending ? 'Sending...' : 'Resend Code'}
+                    </button>
+                  </div>
+                </form>
               </div>
             ) : (
               /* Main Form */
@@ -1055,8 +1188,12 @@ alt="ABL Travels"
               </div>
             ) : (
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault()
+                  if (!forgotEmail.trim()) return
+                  setIsLoading(true)
+                  await forgotPassword(forgotEmail.trim())
+                  setIsLoading(false)
                   setForgotSent(true)
                 }}
                 className="mt-5 space-y-4"

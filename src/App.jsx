@@ -57,107 +57,6 @@ function VisaPageView({ onOpenLogin, onNavigateToDashboard }) {
   )
 }
 
-function ContactPageView({ onOpenLogin, onNavigateToDashboard }) {
-  return (
-    <div className="min-h-screen bg-white font-sans text-navy">
-      {/* Main Storefront Header */}
-      <Header
-        onOpenLogin={onOpenLogin}
-        onNavigateToDashboard={onNavigateToDashboard}
-      />
-
-      <ContactPage />
-    </div>
-  )
-}
-
-function GalleryPageView({ onOpenLogin, onNavigateToDashboard }) {
-  return (
-    <div className="min-h-screen bg-white font-sans text-navy">
-      {/* Main Storefront Header */}
-      <Header
-        onOpenLogin={onOpenLogin}
-        onNavigateToDashboard={onNavigateToDashboard}
-      />
-
-      <GalleryPage />
-
-      <Footer />
-    </div>
-  )
-}
-
-function TourPackagesView({ onOpenLogin, onNavigateToDashboard }) {
-  return (
-    <div className="min-h-screen bg-white font-sans text-navy">
-      {/* Main Storefront Header */}
-      <Header
-        onOpenLogin={onOpenLogin}
-        onNavigateToDashboard={onNavigateToDashboard}
-      />
-
-      <TourPackagePage />
-
-      <Footer />
-    </div>
-  )
-}
-
-function TourSearchResultsView({ onOpenLogin, onNavigateToDashboard }) {
-  return (
-    <div className="min-h-screen bg-white font-sans text-navy">
-      {/* Main Storefront Header */}
-      <Header
-        onOpenLogin={onOpenLogin}
-        onNavigateToDashboard={onNavigateToDashboard}
-      />
-
-      <TourSearchResultsPage />
-
-      <Footer />
-    </div>
-  )
-}
-
-function TourDetailPageView({ onOpenLogin, onNavigateToDashboard }) {
-  return (
-    <div className="min-h-screen bg-white font-sans text-navy">
-      {/* Main Storefront Header */}
-      <Header
-        onOpenLogin={onOpenLogin}
-        onNavigateToDashboard={onNavigateToDashboard}
-      />
-
-      <TourDetailPage />
-
-      <Footer />
-    </div>
-  )
-}
-
-function VisaStatusView({ onOpenLogin, onNavigateToDashboard }) {
-  return (
-    <div className="min-h-screen bg-white font-sans text-navy">
-      <Header
-        onOpenLogin={onOpenLogin}
-        onNavigateToDashboard={onNavigateToDashboard}
-      />
-
-      <Suspense
-        fallback={
-          <div className="flex min-h-[50vh] items-center justify-center text-sm text-body">
-            Loading visa tracking...
-          </div>
-        }
-      >
-        <VisaStatusPage />
-      </Suspense>
-
-      <Footer />
-    </div>
-  )
-}
-
 function AppContent() {
   const navigate = useNavigate()
   const {
@@ -199,6 +98,29 @@ function AppContent() {
             />
           }
         />
+
+        {/* 3. Dedicated Contact Us Page */}
+        <Route
+          path="/contact"
+          element={
+            <ContactPageView
+              onOpenLogin={() => navigate('/login')}
+              onNavigateToDashboard={() => navigate('/b2b')}
+            />
+          }
+        />
+
+        {/* 2b. Gallery Page (tour moments + successful visa stories) */}
+        <Route
+          path="/gallery"
+          element={
+            <GalleryPageView
+              onOpenLogin={() => navigate('/login')}
+              onNavigateToDashboard={() => navigate('/b2b')}
+            />
+          }
+        />
+
 
         {/* 3. Dedicated Contact Us Page */}
         <Route
