@@ -18,11 +18,7 @@ import {
 } from 'lucide-react'
 import { useAuth, DEMO_B2B_PARTNER, DEMO_B2C_CUSTOMER } from '../context/AuthContext'
 import { safeRedirectPath } from '@/utils'
-import {
-  signInWithGooglePopup,
-  getFirebaseApiKey,
-  setFirebaseApiKey,
-} from '../services/firebase'
+import { signInWithGooglePopup } from '../services/firebase'
 
 /**
  * High-fidelity vector SVG logo for ABL Travels
@@ -166,10 +162,6 @@ export default function LoginPage({ initialMode = 'login' }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { login, loginWithFirebase, register, verifyOtp, resendOtp, forgotPassword } = useAuth()
-
-  // Firebase Web API Key modal state
-  const [showFirebaseKeyModal, setShowFirebaseKeyModal] = useState(false)
-  const [apiKeyInput, setApiKeyInput] = useState(getFirebaseApiKey())
 
   // ?next= carries the page the visitor came for (the visa status link); only paths on this site are followed
   const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
@@ -325,33 +317,26 @@ export default function LoginPage({ initialMode = 'login' }) {
   }
 
   // Handle Google OAuth via Firebase for Customer (B2C)
-  const handleGoogleLogin = async (overrideKey) => {
-    const key = overrideKey || apiKeyInput || getFirebaseApiKey()
-    if (!key) {
-      setShowFirebaseKeyModal(true)
-      return
-    }
-
+  const handleGoogleLogin = async () => {
     setIsLoading(true)
     setErrorMessage('')
     try {
-      const { idToken, user } = await signInWithGooglePopup(key)
+      const { idToken, user } = await signInWithGooglePopup()
       const res = await loginWithFirebase(idToken)
       if (res.success) {
         setLoginSuccess({
           name: res.user?.name || user?.displayName || 'Google User',
           role: 'B2C',
         })
-        setShowFirebaseKeyModal(false)
         setTimeout(() => navigate(destinationFor('B2C')), 700)
       } else {
         setErrorMessage(res.message || 'Google authentication was rejected by the server.')
       }
     } catch (err) {
-      if (err.message === 'MISSING_FIREBASE_API_KEY') {
-        setShowFirebaseKeyModal(true)
-      } else if (err.code === 'auth/popup-closed-by-user') {
+      if (err.code === 'auth/popup-closed-by-user') {
         setErrorMessage('Google sign-in popup was closed.')
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        // user clicked multiple times or dismissed
       } else {
         setErrorMessage(err.message || 'Google authentication failed.')
       }
@@ -1246,78 +1231,7 @@ export default function LoginPage({ initialMode = 'login' }) {
         </div>
       )}
 
-      {/* Firebase Web API Key Setup Modal */}
-      {showFirebaseKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-dark/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 sm:p-7">
-            <button
-              type="button"
-              onClick={() => setShowFirebaseKeyModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-            >
-              <X className="size-5" />
-            </button>
 
-            <div className="size-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
-              <ShieldCheck className="size-6" />
-            </div>
-
-            <h3 className="text-xl font-bold text-slate-900">
-              Firebase Google Sign-In Setup
-            </h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Google authentication uses Firebase project <code className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[11px] text-slate-800 font-bold">travelms-dev</code>.
-              Please provide your Firebase Web API key to authenticate.
-            </p>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault()
-                const trimmedKey = apiKeyInput.trim()
-                if (!trimmedKey) return
-                setFirebaseApiKey(trimmedKey)
-                setShowFirebaseKeyModal(false)
-                handleGoogleLogin(trimmedKey)
-              }}
-              className="mt-5 space-y-4"
-            >
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Firebase Web API Key (AIzaSy...)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="w-full px-4 py-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-primary"
-                />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Found in Firebase Console &gt; Project Settings &gt; General &gt; Web API Key. You can also save it permanently in <code className="font-mono text-slate-600">dynamic-tracel-frontend/.env</code> as <code className="font-mono text-slate-600">VITE_FIREBASE_API_KEY</code>.
-                </span>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowFirebaseKeyModal(false)}
-                  className="w-1/3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!apiKeyInput.trim() || isLoading}
-                  className="w-2/3 py-2.5 rounded-xl bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isLoading ? 'Connecting...' : 'Save & Continue'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -5,43 +5,36 @@ const DEFAULT_PROJECT_ID = 'travelms-dev'
 const DEFAULT_AUTH_DOMAIN = 'travelms-dev.firebaseapp.com'
 
 /**
- * Retrieves the Firebase Web API Key from Vite env or browser localStorage.
+ * Firebase Client SDK configuration.
+ * Public client keys are loaded strictly from the environment (Vite env variables).
  */
-export const getFirebaseApiKey = () => {
-  return (
-    import.meta.env.VITE_FIREBASE_API_KEY ||
-    localStorage.getItem('abl_firebase_web_api_key') ||
-    ''
-  )
-}
-
-/**
- * Stores or clears a custom Firebase Web API Key in localStorage for testing.
- */
-export const setFirebaseApiKey = (key) => {
-  if (key && key.trim()) {
-    localStorage.setItem('abl_firebase_web_api_key', key.trim())
-  } else {
-    localStorage.removeItem('abl_firebase_web_api_key')
+const getFirebaseConfig = () => {
+  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || ''
+  return {
+    apiKey,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || DEFAULT_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || DEFAULT_PROJECT_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
   }
 }
 
 let firebaseAuthInstance = null
 
 /**
+ * Returns true if the client Firebase environment configuration is populated.
+ */
+export const isFirebaseConfigured = () => {
+  return Boolean(import.meta.env.VITE_FIREBASE_API_KEY)
+}
+
+/**
  * Lazily initialises and returns the Firebase Auth instance.
  */
 export const getFirebaseAuth = () => {
-  const apiKey = getFirebaseApiKey()
-  if (!apiKey) return null
+  const config = getFirebaseConfig()
+  if (!config.apiKey) return null
 
   if (firebaseAuthInstance) return firebaseAuthInstance
-
-  const config = {
-    apiKey,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || DEFAULT_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || DEFAULT_PROJECT_ID,
-  }
 
   const app = getApps().length > 0 ? getApp() : initializeApp(config)
   firebaseAuthInstance = getAuth(app)
@@ -51,15 +44,11 @@ export const getFirebaseAuth = () => {
 /**
  * Initiates the Google OAuth Popup and retrieves a cryptographic idToken.
  */
-export const signInWithGooglePopup = async (customApiKey) => {
-  if (customApiKey) {
-    setFirebaseApiKey(customApiKey)
-    firebaseAuthInstance = null
-  }
-
+export const signInWithGooglePopup = async () => {
   const auth = getFirebaseAuth()
   if (!auth) {
-    throw new Error('MISSING_FIREBASE_API_KEY')
+    console.error('[Firebase] Google Sign-In requires VITE_FIREBASE_API_KEY to be defined in dynamic-tracel-frontend/.env')
+    throw new Error('Google Sign-In is currently unavailable. Please check system configuration.')
   }
 
   const provider = new GoogleAuthProvider()
