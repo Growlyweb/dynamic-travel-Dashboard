@@ -157,7 +157,7 @@ export default function ProfileView({
           setProfile(loaded)
           setEditForm(loaded)
         }
-        if (appsRes?.data && Array.isArray(appsRes.data) && appsRes.data.length > 0) {
+        if (appsRes?.data && Array.isArray(appsRes.data)) {
           setRecentApplications(
             appsRes.data.map((app) => ({
               id: app.id || app.number,
@@ -671,64 +671,72 @@ export default function ProfileView({
                 </thead>
 
                 <tbody className="divide-y divide-slate-100 text-xs sm:text-[13px]">
-                  {recentApplications.map((app) => (
-                    <tr
-                      key={app.id}
-                      className="hover:bg-slate-50/70 transition-colors"
-                    >
-                      {/* # Number */}
-                      <td className="py-3.5 px-2 font-semibold text-slate-500">
-                        {app.id}
-                      </td>
+                  {recentApplications.length > 0 ? (
+                    recentApplications.map((app) => (
+                      <tr
+                        key={app.id}
+                        className="hover:bg-slate-50/70 transition-colors"
+                      >
+                        {/* # Number */}
+                        <td className="py-3.5 px-2 font-semibold text-slate-500">
+                          {app.id}
+                        </td>
 
-                      {/* Applicant Name */}
-                      <td className="py-3.5 px-2 font-semibold text-slate-800 whitespace-nowrap">
-                        {app.applicantName}
-                      </td>
+                        {/* Applicant Name */}
+                        <td className="py-3.5 px-2 font-semibold text-slate-800 whitespace-nowrap">
+                          {app.applicantName}
+                        </td>
 
-                      {/* Country with Flag */}
-                      <td className="py-3.5 px-2 whitespace-nowrap">
-                        <CountryFlag country={app.country} />
-                      </td>
+                        {/* Country with Flag */}
+                        <td className="py-3.5 px-2 whitespace-nowrap">
+                          <CountryFlag country={app.country} />
+                        </td>
 
-                      {/* Application Type */}
-                      <td className="py-3.5 px-2 font-medium text-slate-600 whitespace-nowrap">
-                        {app.applicationType}
-                      </td>
+                        {/* Application Type */}
+                        <td className="py-3.5 px-2 font-medium text-slate-600 whitespace-nowrap">
+                          {app.applicationType}
+                        </td>
 
-                      {/* Date */}
-                      <td className="py-3.5 px-2 font-medium text-slate-500 whitespace-nowrap">
-                        {app.date}
-                      </td>
+                        {/* Date */}
+                        <td className="py-3.5 px-2 font-medium text-slate-500 whitespace-nowrap">
+                          {app.date}
+                        </td>
 
-                      {/* Status */}
-                      <td className="py-3.5 px-2 text-center whitespace-nowrap">
-                        <StatusBadge status={app.status} />
-                      </td>
+                        {/* Status */}
+                        <td className="py-3.5 px-2 text-center whitespace-nowrap">
+                          <StatusBadge status={app.status} />
+                        </td>
 
-                      {/* Action View & Menu */}
-                      <td className="py-3.5 px-2 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedApp(app)}
-                            className="px-3 py-1 rounded-md text-xs font-semibold text-[#0284c7] bg-sky-50/80 hover:bg-sky-100 transition-colors cursor-pointer"
-                          >
-                            View
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              triggerToast(`Options for ${app.applicantName}`)
-                            }
-                            className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
-                          >
-                            <MoreVertical className="size-4" />
-                          </button>
-                        </div>
+                        {/* Action View & Menu */}
+                        <td className="py-3.5 px-2 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedApp(app)}
+                              className="px-3 py-1 rounded-md text-xs font-semibold text-[#0284c7] bg-sky-50/80 hover:bg-sky-100 transition-colors cursor-pointer"
+                            >
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerToast(`Options for ${app.applicantName}`)
+                              }
+                              className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              <MoreVertical className="size-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        No recent visa applications found.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

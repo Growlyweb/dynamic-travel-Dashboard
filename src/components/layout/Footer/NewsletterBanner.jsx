@@ -1,10 +1,26 @@
 import { useState } from 'react'
 import { ArrowRight, CheckCircle2, Lock, Mail } from 'lucide-react'
 import { IMAGES } from '@/constants'
+import { apiSubscribeNewsletter } from '@/services/api'
 
 export default function NewsletterBanner() {
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!email.trim() || !email.includes('@')) return
+    setIsSubmitting(true)
+    try {
+      await apiSubscribeNewsletter(email.trim())
+    } catch (err) {
+      console.warn('Newsletter subscription warning:', err?.message)
+    } finally {
+      setIsSubmitting(false)
+      setSubscribed(true)
+    }
+  }
 
   return (
     <div className="relative z-20 mx-auto -mt-16 max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -35,10 +51,7 @@ export default function NewsletterBanner() {
               </p>
             ) : (
               <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (email.trim()) setSubscribed(true)
-                }}
+                onSubmit={handleSubmit}
                 className="mt-6 flex max-w-md items-center gap-2 rounded-full border border-slate-200/90 bg-white p-1.5 pl-4 shadow-sm transition-all focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10"
               >
                 <Mail className="size-4 shrink-0 text-[#8b9cb0]" />
@@ -52,9 +65,10 @@ export default function NewsletterBanner() {
                 />
                 <button
                   type="submit"
-                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#f55200] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:shadow-orange-500/35 hover:-translate-y-px active:scale-95"
+                  disabled={isSubmitting}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#f55200] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:shadow-orange-500/35 hover:-translate-y-px active:scale-95 disabled:opacity-60 cursor-pointer"
                 >
-                  Subscribe
+                  {isSubmitting ? 'Saving...' : 'Subscribe'}
                   <ArrowRight className="size-3.5" strokeWidth={2.5} />
                 </button>
               </form>

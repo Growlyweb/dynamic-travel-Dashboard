@@ -259,6 +259,14 @@ export const apiGetPublicTours = (query) =>
 export const apiGetPublicTourDetail = (id) =>
   get(`/tours/${id}`)
 
+/** GET /api/tour-categories */
+export const apiGetTourCategories = () =>
+  get('/tour-categories')
+
+/** POST /api/contact */
+export const apiSubmitContact = (payload) =>
+  post('/contact', payload)
+
 /** POST /api/marketing/subscribers */
 export const apiSubscribeNewsletter = (email) =>
   post('/marketing/subscribers', { email })

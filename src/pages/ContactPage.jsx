@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiSubmitContact, apiSubscribeNewsletter } from '@/services/api'
 import {
   Phone,
   Mail,
@@ -134,7 +135,7 @@ export default function ContactPage() {
     }
   }
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault()
     const newErrors = {}
     if (!formData.fullName.trim()) newErrors.fullName = 'Full Name is required'
@@ -153,8 +154,14 @@ export default function ContactPage() {
     }
 
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      await apiSubmitContact({
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        contactNumber: formData.contactNumber.trim(),
+        subject: formData.subject,
+        message: formData.message.trim(),
+      })
       setSubmitSuccess(true)
       setFormData({
         fullName: '',
@@ -164,12 +171,21 @@ export default function ContactPage() {
         message: '',
       })
       setTimeout(() => setSubmitSuccess(false), 6000)
-    }, 700)
+    } catch (err) {
+      setErrors({ form: err?.message || 'Failed to send message. Please try again.' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleNewsletterSubmit = (e) => {
+  const handleNewsletterSubmit = async (e) => {
     e.preventDefault()
     if (!newsletterEmail || !newsletterEmail.includes('@')) return
+    try {
+      await apiSubscribeNewsletter(newsletterEmail)
+    } catch (err) {
+      console.warn('Newsletter subscription warning:', err?.message)
+    }
     setNewsletterSuccess(true)
     setNewsletterEmail('')
     setTimeout(() => setNewsletterSuccess(false), 5000)
@@ -337,6 +353,16 @@ export default function ContactPage() {
                   <p className="mt-0.5 text-emerald-700">
                     Thank you for contacting ABL Travels. Our travel consultants will get back to you shortly.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {errors.form && (
+              <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-3 animate-fade-in">
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div className="text-xs sm:text-sm">
+                  <p className="font-bold text-rose-900">Submission Error</p>
+                  <p className="mt-0.5 text-rose-700">{errors.form}</p>
                 </div>
               </div>
             )}

@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { apiCreateB2CTourBooking, apiAddB2CSavedItem } from '@/services/api'
+import { apiCreateB2CTourBooking, apiAddB2CSavedItem, apiGetPublicTourDetail } from '@/services/api'
+import { buildTourDetailData } from '@/utils/tourAdapter'
 import {
   Heart,
   Share2,
@@ -67,7 +68,37 @@ export default function TourDetailPage() {
   const { accessToken, currentUser } = useAuth()
   const navigate = useNavigate()
   const { slug } = useParams()
-  const tour = DELHI_TOUR_DATA
+  const [liveTourData, setLiveTourData] = useState(null)
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
+
+  // Fetch live tour details from backend if slug is present
+  useEffect(() => {
+    if (!slug || slug === 'delhi-city-tour') return
+    let isMounted = true
+    setIsLoadingDetail(true)
+
+    apiGetPublicTourDetail(slug)
+      .then((res) => {
+        if (!isMounted) return
+        if (res?.data) {
+          setLiveTourData(res.data)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load tour details from backend:', err?.message)
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingDetail(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [slug])
+
+  const tour = useMemo(() => {
+    return buildTourDetailData(liveTourData, DELHI_TOUR_DATA)
+  }, [liveTourData])
 
   // State
   const [isSaved, setIsSaved] = useState(false)
@@ -213,15 +244,15 @@ export default function TourDetailPage() {
       try {
         const res = await apiCreateB2CTourBooking(
           {
-            tourId: 'delhi-day-tour',
+            tourId: tour._id || tour.id || 'delhi-day-tour',
             tourName: tour.title,
-            destination: tour.location?.split(',')[0] || 'Delhi',
+            destination: tour.location?.split(',')[0] || tour.city || 'Delhi',
             duration: tour.duration || '8 Hours',
             startDate: selectedDate || new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10),
             travelers: participantsSummary,
             totalPrice,
-            currency: 'USD',
-            image: tour.heroImage || '',
+            currency: tour.currencyCode || 'USD',
+            image: tour.coverImage || tour.heroImage || '',
             contact: {
               name: currentUser?.name || 'Traveler',
               email: currentUser?.email || '',

@@ -38,7 +38,8 @@ function matches(tour, filters) {
 export default function CustomToursPage() {
   const { accessToken } = useAuth()
   const [liveTours, setLiveTours] = useState([])
-  const activeTours = liveTours.length > 0 ? liveTours : CUSTOM_TOURS
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const activeTours = accessToken ? liveTours : CUSTOM_TOURS
   const list = useListFilters(activeTours, { initial: INITIAL_FILTERS, predicate: matches })
   const [selected, setSelected] = useState(null)
   const [isBuilderOpen, setIsBuilderOpen] = useState(false)
@@ -47,15 +48,15 @@ export default function CustomToursPage() {
     if (!accessToken) return
     try {
       const res = await apiGetB2CCustomTours({}, accessToken)
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+      if (res?.data && Array.isArray(res.data)) {
         setLiveTours(
           res.data.map((c) => ({
             id: `CT-${String(c._id).slice(-6).toUpperCase()}`,
             _id: c._id,
             name: `${c.destination} Custom Tour`,
             destinations: c.destination,
-            startDate: new Date(c.startDate).toISOString().slice(0, 10),
-            endDate: new Date(c.endDate).toISOString().slice(0, 10),
+            startDate: c.startDate ? new Date(c.startDate).toISOString().slice(0, 10) : '',
+            endDate: c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : '',
             travelers: `${c.travelers} Travelers`,
             status:
               c.status === 'quoted'
@@ -71,6 +72,8 @@ export default function CustomToursPage() {
       }
     } catch (err) {
       console.warn('Could not load custom tours:', err?.message)
+    } finally {
+      setHasLoaded(true)
     }
   }
 

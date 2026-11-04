@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import TourHero from '@/components/tour-packages/TourHero'
 import HorizontalActivityCard from '@/components/tour-packages/HorizontalActivityCard'
 import VerticalActivityCard from '@/components/tour-packages/VerticalActivityCard'
 import DestinationCard from '@/components/tour-packages/DestinationCard'
 import CarouselSection from '@/components/tour-packages/CarouselSection'
+import { apiGetPublicTours, apiGetTourCategories } from '@/services/api'
+import { mapBackendTour } from '@/utils/tourAdapter'
 
 import {
   RECENT_SEARCHES_INITIAL,
@@ -26,10 +28,35 @@ export default function TourPackagePage() {
 
   const [savedWishlistIds, setSavedWishlistIds] = useState(() => ['395320'])
   const [recentSearches, setRecentSearches] = useState(RECENT_SEARCHES_INITIAL)
+  const [liveTours, setLiveTours] = useState([])
+  const [categories, setCategories] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Scroll to top on mount
+  // Scroll to top on mount and fetch live tours & categories
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    let isMounted = true
+    setIsLoading(true)
+
+    Promise.allSettled([
+      apiGetPublicTours({ limit: 30 }),
+      apiGetTourCategories(),
+    ]).then(([toursRes, catsRes]) => {
+      if (!isMounted) return
+      if (toursRes.status === 'fulfilled' && toursRes.value?.data) {
+        const mapped = toursRes.value.data.map(mapBackendTour).filter(Boolean)
+        setLiveTours(mapped)
+      }
+      if (catsRes.status === 'fulfilled' && catsRes.value?.data) {
+        setCategories(catsRes.value.data)
+      }
+      setIsLoading(false)
+    })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Wishlist toggle handler
@@ -72,28 +99,59 @@ export default function TourPackagePage() {
     setSearchQuery('')
   }
 
+  // Source pool for tours: live tours from backend first, with static seed fallback
+  const tourPool = useMemo(() => {
+    return liveTours.length > 0 ? [...liveTours, ...RECOMMENDED_PARIS_TOURS] : RECOMMENDED_PARIS_TOURS
+  }, [liveTours])
+
   // Filter tours for "Based on your search in {City}"
-  // If user searched Paris, show Paris tours. If another city, filter or show city activities.
-  const cityFilteredTours = searchedCity
-    ? RECOMMENDED_PARIS_TOURS.filter((t) => {
-        const q = searchedCity.toLowerCase()
-        return (
-          t.city.toLowerCase().includes(q) ||
-          t.context?.toLowerCase().includes(q) ||
-          t.title.toLowerCase().includes(q)
-        )
-      })
-    : []
+  const cityFilteredTours = useMemo(() => {
+    if (!searchedCity) return []
+    const q = searchedCity.toLowerCase()
+    return tourPool.filter((t) => {
+      return (
+        (t.city && t.city.toLowerCase().includes(q)) ||
+        (t.destination && t.destination.toLowerCase().includes(q)) ||
+        (t.country && t.country.toLowerCase().includes(q)) ||
+        (t.context && t.context.toLowerCase().includes(q)) ||
+        (t.title && t.title.toLowerCase().includes(q))
+      )
+    })
+  }, [searchedCity, tourPool])
 
   // Fallback to Paris tours if the user searched "Paris" or generic term
   const displayedCityTours =
-    cityFilteredTours.length > 0 ? cityFilteredTours : RECOMMENDED_PARIS_TOURS
+    cityFilteredTours.length > 0 ? cityFilteredTours : tourPool.slice(0, 6)
 
   // 6 destinations for the "Things to do wherever you're going" section
-  const topSixDestinations = DESTINATIONS_SWIMLANE.slice(0, 6)
+  const topSixDestinations = useMemo(() => {
+    if (liveTours.length > 0) {
+      const seen = new Set()
+      const liveDests = []
+      for (const t of liveTours) {
+        if (t.city && !seen.has(t.city)) {
+          seen.add(t.city)
+          liveDests.push({ name: t.city, image: t.image })
+        }
+      }
+      for (const d of DESTINATIONS_SWIMLANE) {
+        if (!seen.has(d.name)) {
+          seen.add(d.name)
+          liveDests.push(d)
+        }
+      }
+      return liveDests.slice(0, 6)
+    }
+    return DESTINATIONS_SWIMLANE.slice(0, 6)
+  }, [liveTours])
 
-  // 4 unforgettable originals from the picture
-  const topFourOriginals = UNFORGETTABLE_ORIGINALS.slice(0, 4)
+  // Unforgettable travel experiences: prioritize live tours from backend
+  const topFourOriginals = useMemo(() => {
+    if (liveTours.length > 0) {
+      return liveTours.slice(0, 4)
+    }
+    return UNFORGETTABLE_ORIGINALS.slice(0, 4)
+  }, [liveTours])
 
   return (
     <div className="min-h-screen bg-white font-sans text-[#181a1f] pb-16">

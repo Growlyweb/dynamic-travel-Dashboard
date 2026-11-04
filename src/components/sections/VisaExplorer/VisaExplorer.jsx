@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect } from 'react'
 import { Activity, ArrowRight } from 'lucide-react'
 import { DEFAULT_VISA_COUNTRY, buildCountryList, getVisaContent } from '@/constants'
 import { useCountries, useVisaSelection } from '@/hooks'
+import { apiGetPublicVisaCountries, apiGetPublicVisaTypes } from '@/services/api'
+import { slugify } from '@/utils'
 import CountrySidebar from './CountrySidebar'
 import FeeCard from './FeeCard'
 import OnRequestPanel from './OnRequestPanel'
@@ -17,6 +19,28 @@ export default function VisaExplorer() {
   const { code, typeId, selectCountry, selectType } = useVisaSelection()
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false)
+  const [liveCountries, setLiveCountries] = useState([])
+  const [liveVisaTypes, setLiveVisaTypes] = useState([])
+
+  // Fetch live visa countries and types from backend
+  useEffect(() => {
+    let isMounted = true
+    Promise.allSettled([
+      apiGetPublicVisaCountries(),
+      apiGetPublicVisaTypes({ limit: 100 }),
+    ]).then(([cRes, tRes]) => {
+      if (!isMounted) return
+      if (cRes.status === 'fulfilled' && cRes.value?.data) {
+        setLiveCountries(cRes.value.data)
+      }
+      if (tRes.status === 'fulfilled' && tRes.value?.data) {
+        setLiveVisaTypes(tRes.value.data)
+      }
+    })
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   // Allow URL hash or search param to open track modal directly (e.g. /visa#track)
   useEffect(() => {
@@ -36,8 +60,89 @@ export default function VisaExplorer() {
     countryList.find((item) => item.code === DEFAULT_VISA_COUNTRY) ??
     countryList[0]
 
-  const content = getVisaContent(country.code)
-  const type = content?.visaTypes.find((item) => item.id === typeId) ?? content?.visaTypes[0] ?? null
+  // Resolve content: check live backend data first, fall back to static catalog
+  const content = useMemo(() => {
+    const staticContent = getVisaContent(country.code)
+
+    // Find backend country match
+    const bCountry = liveCountries.find(
+      (c) =>
+        (c.code && c.code.toLowerCase() === country.code.toLowerCase()) ||
+        (c.name && c.name.toLowerCase() === country.name.toLowerCase())
+    )
+
+    if (bCountry && liveVisaTypes.length > 0) {
+      const matchingTypes = liveVisaTypes.filter(
+        (t) => String(t.country) === String(bCountry._id)
+      )
+
+      if (matchingTypes.length > 0) {
+        const dynamicTypes = matchingTypes.map((vt) => {
+          const typeSlug = slugify(vt.name)
+          const staticType = staticContent?.visaTypes?.find(
+            (st) => st.id === typeSlug || st.label.toLowerCase() === vt.name.toLowerCase()
+          )
+
+          return {
+            id: typeSlug,
+            label: vt.name,
+            tagline: vt.description || staticType?.tagline || `${vt.name} processing for ${country.name}`,
+            details: {
+              title: `${country.name} ${vt.name}`,
+              facts: {
+                processing: vt.processingTime || staticType?.details?.facts?.processing || '5-7 Days',
+                stay: staticType?.details?.facts?.stay || 'Up to 30 Days',
+                entry: vt.entries === 'multiple' ? 'Multiple Entry' : 'Single Entry',
+                validity: staticType?.details?.facts?.validity || 'As per approval',
+              },
+              fee: {
+                currency: vt.currency || 'BDT',
+                amount: vt.b2cPrice || staticType?.details?.fee?.amount || 0,
+                note: staticType?.details?.fee?.note || 'All Inclusive (Embassy + Service + VAT)',
+              },
+              includes: staticType?.details?.includes || [
+                'Professional document verification & review',
+                'Official embassy submission assistance',
+                'Real-time status tracking updates',
+                'Passport collection & delivery support',
+              ],
+              requirements: staticType?.details?.requirements || [
+                'Original Passport (valid for at least 6 months from travel date)',
+                'Recent photographs with white background (2 copies, 35mm × 45mm)',
+                'Completed Visa Application Form',
+                'Copy of National ID Card / Birth Certificate',
+                'Bank Statement for last 6 months (minimum balance BDT 200,000+)',
+                'Confirmed return flight booking and hotel reservation',
+                'Personal cover letter stating purpose of visit',
+              ],
+              terms: staticType?.details?.terms || [
+                'Visa fee is strictly non-refundable once submitted.',
+                'Visa issuance is at the sole discretion of the respective embassy.',
+                'Client must submit genuine and verified documentation.',
+                'Processing timelines may vary depending on embassy workload.',
+              ],
+            },
+          }
+        })
+
+        return {
+          heroImage: staticContent?.heroImage || null,
+          summary:
+            bCountry.description ||
+            staticContent?.summary ||
+            `Explore ${country.name} with our hassle-free visa application and document verification process.`,
+          visaTypes: dynamicTypes,
+        }
+      }
+    }
+
+    return staticContent
+  }, [country, liveCountries, liveVisaTypes])
+
+  const type =
+    content?.visaTypes?.find((item) => item.id === typeId) ??
+    content?.visaTypes?.[0] ??
+    null
   const details = type?.details ?? null
 
   return (

@@ -28,6 +28,8 @@ import {
   RECOMMENDED_LIST_PARIS,
   PARIS_FAQS,
 } from '@/data/citySearchResultsData'
+import { apiGetPublicTours, apiSubscribeNewsletter } from '@/services/api'
+import { mapBackendTour } from '@/utils/tourAdapter'
 
 export default function TourSearchResultsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -53,13 +55,41 @@ export default function TourSearchResultsPage() {
   // Newsletter signup state
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false)
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
+
+  // Live backend tours matching search
+  const [liveTours, setLiveTours] = useState([])
+  const [isLoadingTours, setIsLoadingTours] = useState(false)
 
   // FAQ accordion state
   const [expandedFaqIndex, setExpandedFaqIndex] = useState(null)
 
-  // Scroll to top on mount
+  // Scroll to top on mount and fetch tours matching query
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    setSearchInput(cityParam)
+
+    let isMounted = true
+    setIsLoadingTours(true)
+
+    apiGetPublicTours({ search: cityParam, limit: 30 })
+      .then((res) => {
+        if (!isMounted) return
+        if (res?.data && Array.isArray(res.data)) {
+          const mapped = res.data.map(mapBackendTour).filter(Boolean)
+          setLiveTours(mapped)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch tours for search:', err?.message)
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingTours(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [cityParam])
 
   // Category filter chips matching the picture
@@ -95,15 +125,24 @@ export default function TourSearchResultsPage() {
     }
   }
 
-  // Base list + extra tours when expanded
+  // Base list + extra tours when expanded (prioritizing live backend tours)
   const allTours = useMemo(() => {
-    if (cityParam && cityParam.toLowerCase().includes('delhi')) {
-      return CITY_SEARCH_RESULTS_DELHI
+    const staticList =
+      cityParam && cityParam.toLowerCase().includes('delhi')
+        ? CITY_SEARCH_RESULTS_DELHI
+        : isExpanded
+        ? [...CITY_SEARCH_RESULTS_PARIS, ...EXTRA_PARIS_TOURS]
+        : CITY_SEARCH_RESULTS_PARIS
+
+    if (liveTours.length > 0) {
+      // Avoid duplicates
+      const liveIds = new Set(liveTours.map((t) => t.id))
+      const unseeded = staticList.filter((s) => !liveIds.has(s.id))
+      return [...liveTours, ...unseeded]
     }
-    return isExpanded
-      ? [...CITY_SEARCH_RESULTS_PARIS, ...EXTRA_PARIS_TOURS]
-      : CITY_SEARCH_RESULTS_PARIS
-  }, [isExpanded, cityParam])
+
+    return staticList
+  }, [liveTours, isExpanded, cityParam])
 
   // Filter the tours
   const filteredTours = useMemo(() => {
@@ -463,9 +502,18 @@ export default function TourSearchResultsPage() {
                 </div>
               ) : (
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault()
-                    if (newsletterEmail) setNewsletterSubscribed(true)
+                    if (!newsletterEmail || !newsletterEmail.includes('@')) return
+                    setNewsletterLoading(true)
+                    try {
+                      await apiSubscribeNewsletter(newsletterEmail)
+                    } catch (err) {
+                      console.warn('Newsletter subscription warning:', err?.message)
+                    } finally {
+                      setNewsletterLoading(false)
+                      setNewsletterSubscribed(true)
+                    }
                   }}
                   className="mt-4 flex items-center rounded-full bg-white pl-4 pr-1.5 py-1.5 shadow-sm max-w-md"
                 >
@@ -480,9 +528,10 @@ export default function TourSearchResultsPage() {
                   />
                   <button
                     type="submit"
-                    className="rounded-full bg-[#0071eb] hover:bg-[#005ec4] active:scale-95 px-5 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer shrink-0"
+                    disabled={newsletterLoading}
+                    className="rounded-full bg-[#0071eb] hover:bg-[#005ec4] active:scale-95 px-5 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer shrink-0 disabled:opacity-60"
                   >
-                    Sign up
+                    {newsletterLoading ? 'Saving...' : 'Sign up'}
                   </button>
                 </form>
               )}

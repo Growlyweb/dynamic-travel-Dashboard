@@ -40,14 +40,11 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
     setIsLoading(true)
     try {
       const res = await apiGetB2BApplications({ page: 1, limit: 100 }, accessToken)
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        // Merge live applications with seed mocks (avoid duplicate numbers)
-        const liveMap = new Set(res.data.map((item) => item.number || item.appRef))
-        const unseededMocks = APPLICATIONS_DATA.filter((mock) => !liveMap.has(mock.appRef))
-        setRawApplications([...res.data, ...unseededMocks])
+      if (res?.data && Array.isArray(res.data)) {
+        setRawApplications(res.data)
       }
     } catch (err) {
-      console.warn('Using local applications data fallback:', err?.message)
+      console.warn('Could not load B2B applications:', err?.message)
     } finally {
       setIsLoading(false)
     }
@@ -502,13 +499,20 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
               ) : (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
-                    <p className="text-sm">No applications found matching the selected filters.</p>
-                    <button
-                      onClick={handleReset}
-                      className="mt-2 text-xs font-semibold text-[#0066cc] hover:underline"
-                    >
-                      Clear all filters
-                    </button>
+                    <p className="text-sm font-semibold text-slate-700">No applications found.</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {rawApplications.length === 0
+                        ? 'Click "New Application" to submit your first visa application.'
+                        : 'No applications match the selected filters.'}
+                    </p>
+                    {rawApplications.length > 0 && (
+                      <button
+                        onClick={handleReset}
+                        className="mt-2 text-xs font-semibold text-[#0066cc] hover:underline cursor-pointer"
+                      >
+                        Clear all filters
+                      </button>
+                    )}
                   </td>
                 </tr>
               )}
@@ -521,7 +525,7 @@ export default function ApplicationsView({ onOpenNewModal, onSelectApplication }
           <div className="text-center sm:text-left">
             Showing <span className="font-semibold text-slate-800">1</span> to{' '}
             <span className="font-semibold text-slate-800">{filteredApplications.length}</span> of{' '}
-            <span className="font-semibold text-slate-800">68</span> applications
+            <span className="font-semibold text-slate-800">{rawApplications.length}</span> applications
           </div>
 
           <div className="flex items-center justify-center gap-1 self-center sm:self-auto flex-wrap">
