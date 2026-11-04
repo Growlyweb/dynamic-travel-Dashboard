@@ -9,22 +9,23 @@ const CustomerProfileContext = createContext(null)
 const storageKey = (userId) => `abl_customer_profile:${userId}`
 
 function buildInitialState(user) {
+  const safeUser = user || {}
   const seed = {
     profile: {
-      fullName: user.name,
-      email: user.email,
-      ...splitPhone(user.phone),
+      fullName: safeUser.name || 'Traveller',
+      email: safeUser.email || '',
+      ...splitPhone(safeUser.phone),
       ...PROFILE_DEFAULTS,
-      avatarUrl: '',
+      avatarUrl: safeUser.avatar || '',
     },
     preferences: PREFERENCE_DEFAULTS,
   }
 
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey(user.id)) || 'null')
+    const saved = JSON.parse(localStorage.getItem(storageKey(safeUser.id || 'guest')) || 'null')
     if (!saved) return seed
     return {
-      profile: { ...seed.profile, ...saved.profile, email: user.email },
+      profile: { ...seed.profile, ...saved.profile, email: safeUser.email || seed.profile.email },
       preferences: { ...seed.preferences, ...saved.preferences },
     }
   } catch {
@@ -38,7 +39,7 @@ export function CustomerProfileProvider({ user, children }) {
 
   // Fetch current profile from backend when authenticated
   useEffect(() => {
-    if (!accessToken || !user || user.role !== 'b2c') return
+    if (!accessToken || !user || user.role?.toLowerCase() !== 'b2c') return
     let active = true
 
     apiGetB2CProfile(accessToken)
@@ -110,15 +111,23 @@ export function CustomerProfileProvider({ user, children }) {
     }
   }
 
+  const fallbackProfile = {
+    fullName: user?.name || 'Traveller',
+    email: user?.email || '',
+    ...splitPhone(user?.phone),
+    ...PROFILE_DEFAULTS,
+    avatarUrl: user?.avatar || '',
+  }
+
   const value = {
-    profile: state?.profile ?? null,
+    profile: state?.profile ?? fallbackProfile,
     preferences: state?.preferences ?? PREFERENCE_DEFAULTS,
     updateProfile: handleUpdateProfile,
     updatePreferences: (patch) =>
       commit({ ...state, preferences: { ...state.preferences, ...patch } }),
     clearStoredProfile: () => {
       try {
-        localStorage.removeItem(storageKey(user.id))
+        if (user?.id) localStorage.removeItem(storageKey(user.id))
       } catch {
         // Nothing to clear when storage is blocked
       }

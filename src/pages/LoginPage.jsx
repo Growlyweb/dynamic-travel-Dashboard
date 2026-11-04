@@ -165,7 +165,7 @@ export default function LoginPage({ initialMode = 'login' }) {
 
   // ?next= carries the page the visitor came for (the visa status link); only paths on this site are followed
   const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
-  const destinationFor = (role) => nextPath || (role === 'B2B' ? '/b2b' : location.state?.from || '/')
+  const destinationFor = (role) => nextPath || location.state?.from || (role === 'B2B' ? '/b2b' : '/account')
 
   // State
   const [activeTab, setActiveTab] = useState('customer') // 'customer' | 'partner'
