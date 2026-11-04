@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import {
   apiLogin,
+  apiFirebaseLogin,
   apiRegisterB2C,
   apiRegisterB2B,
   apiVerifyOtp,
@@ -241,6 +242,25 @@ export function AuthProvider({ children }) {
   const loginAsB2B = useCallback(() => login({ role: 'B2B', isDemo: true }), [login])
   const loginAsB2C = useCallback(() => login({ role: 'B2C', isDemo: true }), [login])
 
+  // ── FIREBASE GOOGLE LOGIN (B2C) ──────────────────────────────────────────
+  const loginWithFirebase = useCallback(async (idToken) => {
+    try {
+      const body = await apiFirebaseLogin(idToken, 'B2C')
+      const user = mapUser(body.data?.user, body.data?.partner)
+      const token = body.data?.accessToken
+      if (token) {
+        applySession(user, token)
+        scheduleRefresh(body.data?.expiresIn || 13 * 60)
+      }
+      return { success: true, user, token }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, message: err.message, code: err.code }
+      }
+      return { success: false, message: err?.message || 'Firebase authentication failed.' }
+    }
+  }, [applySession, scheduleRefresh])
+
   // ── REGISTER (B2C) ─────────────────────────────────────────────────────────
   const register = useCallback(async ({ name, email, password, phone }) => {
     try {
@@ -340,6 +360,7 @@ export function AuthProvider({ children }) {
     isB2BPartner: currentUser?.role === 'B2B',
     isAdmin: currentUser?.role === 'ADMIN',
     login,
+    loginWithFirebase,
     loginAsB2B,
     loginAsB2C,
     register,
