@@ -72,7 +72,7 @@ function SavedCard({ item, onRemove }) {
 
 export default function SavedItemsPage() {
   const { accessToken } = useAuth()
-  const [items, setItems] = useState(SAVED_ITEMS)
+  const [items, setItems] = useState(accessToken ? [] : SAVED_ITEMS)
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
 
@@ -80,7 +80,7 @@ export default function SavedItemsPage() {
     if (!accessToken) return
     apiGetB2CSavedItems(accessToken)
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           setItems(
             res.data.map((item) => ({
               id: item._id,

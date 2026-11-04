@@ -498,27 +498,20 @@ export default function Header({
                     {currentUser?.initials?.[0] || 'A'}
                   </div>
                 ) : (
-                  /* B2C Customer: Circular Headshot Photo with Blue Ring */
-                  <div className="size-9.5 rounded-full ring-2 ring-[#0d81f0] overflow-hidden shadow-sm">
-                    <img
-                      src={currentUser?.avatar || '/images/users/sajjad-avatar.jpg'}
-                      alt={currentUser?.name || 'Md. Sajjad Hossen'}
-                      className="size-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                        e.currentTarget.parentElement.classList.add(
-                          'bg-blue-600',
-                          'flex',
-                          'items-center',
-                          'justify-center',
-                          'text-white',
-                          'font-bold',
-                          'text-xs'
-                        )
-                        e.currentTarget.parentElement.innerText = currentUser?.initials || 'SH'
-                      }}
-                    />
-                  </div>
+                  /* B2C Customer: Circular Headshot Photo or Initials Badge */
+                  currentUser?.avatar ? (
+                    <div className="size-9.5 rounded-full ring-2 ring-[#0d81f0] overflow-hidden shadow-sm">
+                      <img
+                        src={currentUser.avatar}
+                        alt={currentUser.name || 'Customer'}
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex size-9.5 items-center justify-center rounded-full bg-gradient-to-br from-[#0066ff] to-[#0b2a4a] text-xs font-bold text-white ring-2 ring-[#0d81f0] shadow-sm select-none">
+                      {currentUser?.initials || 'U'}
+                    </div>
+                  )
                 )}
                 <ChevronDown
                   className={`size-3.5 text-slate-700 transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`}
@@ -630,13 +623,17 @@ export default function Header({
                       <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#0066ff] text-xl font-bold text-white shadow-xs select-none">
                         {currentUser?.initials?.[0] || 'A'}
                       </div>
-                    ) : (
+                    ) : currentUser?.avatar ? (
                       <div className="size-12 shrink-0 rounded-full ring-2 ring-[#0d81f0] overflow-hidden shadow-xs">
                         <img
-                          src={currentUser?.avatar || '/images/users/sajjad-avatar.jpg'}
-                          alt={currentUser?.name || 'Customer'}
+                          src={currentUser.avatar}
+                          alt={currentUser.name || 'Customer'}
                           className="size-full object-cover"
                         />
+                      </div>
+                    ) : (
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0066ff] to-[#0b2a4a] text-lg font-bold text-white ring-2 ring-[#0d81f0] shadow-xs select-none">
+                        {currentUser?.initials || 'U'}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">

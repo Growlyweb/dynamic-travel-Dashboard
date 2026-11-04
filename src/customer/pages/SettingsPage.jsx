@@ -36,7 +36,7 @@ const AVATAR_TYPES = ['image/jpeg', 'image/png']
 
 function SettingsCard({ icon: Icon, title, subtitle, aside, children, className = '' }) {
   return (
-    <section className={`rounded-2xl border border-slate-100 bg-white p-5 shadow-card sm:p-6 ${className}`}>
+    <section className={`flex h-full flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-card sm:p-6 ${className}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-4">
           <Icon className="mt-1 size-6 shrink-0 text-brand" strokeWidth={1.8} aria-hidden="true" />
@@ -166,44 +166,46 @@ function ProfileInformation() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField
-            label="Full Name"
-            name="fullName"
-            value={form.fullName}
-            onChange={setField('fullName')}
-            error={errors.fullName}
-            autoComplete="name"
-          />
-          <TextField label="Email Address" name="email" value={profile.email} disabled readOnly />
-          <PhoneField
-            label="Phone Number"
-            dialCode={form.dialCode}
-            onDialCodeChange={(dialCode) => setForm((current) => ({ ...current, dialCode }))}
-            value={form.phone}
-            onChange={setField('phone')}
-            error={errors.phone}
-          />
-          <DateField
-            label="Date of Birth"
-            name="dob"
-            value={form.dob}
-            onChange={setField('dob')}
-            error={errors.dob}
-            max={today}
+      <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-1 flex-col justify-between space-y-4">
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Full Name"
+              name="fullName"
+              value={form.fullName}
+              onChange={setField('fullName')}
+              error={errors.fullName}
+              autoComplete="name"
+            />
+            <TextField label="Email Address" name="email" value={profile.email} disabled readOnly />
+            <PhoneField
+              label="Phone Number"
+              dialCode={form.dialCode}
+              onDialCodeChange={(dialCode) => setForm((current) => ({ ...current, dialCode }))}
+              value={form.phone}
+              onChange={setField('phone')}
+              error={errors.phone}
+            />
+            <DateField
+              label="Date of Birth"
+              name="dob"
+              value={form.dob}
+              onChange={setField('dob')}
+              error={errors.dob}
+              max={today}
+            />
+          </div>
+
+          <TextAreaField
+            label="Address"
+            name="address"
+            value={form.address}
+            onChange={setField('address')}
+            autoComplete="street-address"
           />
         </div>
 
-        <TextAreaField
-          label="Address"
-          name="address"
-          value={form.address}
-          onChange={setField('address')}
-          autoComplete="street-address"
-        />
-
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="mt-auto flex flex-wrap items-center justify-end gap-3 pt-4">
           <Notice message={notice} />
           <button type="submit" className={`${primaryButton} rounded-lg px-6 py-2.5`}>
             Save Changes
@@ -330,40 +332,42 @@ function ChangePassword() {
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        {!isGoogleAccountWithoutPassword && (
+      <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-1 flex-col justify-between space-y-4">
+        <div className="space-y-4">
+          {!isGoogleAccountWithoutPassword && (
+            <PasswordField
+              label="Current Password"
+              name="currentPassword"
+              autoComplete="current-password"
+              value={form.current}
+              onChange={setField('current')}
+              error={errors.current}
+            />
+          )}
           <PasswordField
-            label="Current Password"
-            name="currentPassword"
-            autoComplete="current-password"
-            value={form.current}
-            onChange={setField('current')}
-            error={errors.current}
+            label={isGoogleAccountWithoutPassword ? 'Create Password' : 'New Password'}
+            name="newPassword"
+            autoComplete="new-password"
+            value={form.next}
+            onChange={setField('next')}
+            error={errors.next}
           />
-        )}
-        <PasswordField
-          label={isGoogleAccountWithoutPassword ? 'Create Password' : 'New Password'}
-          name="newPassword"
-          autoComplete="new-password"
-          value={form.next}
-          onChange={setField('next')}
-          error={errors.next}
-        />
-        <PasswordField
-          label={isGoogleAccountWithoutPassword ? 'Confirm Password' : 'Confirm New Password'}
-          name="confirmPassword"
-          autoComplete="new-password"
-          value={form.confirm}
-          onChange={setField('confirm')}
-          error={errors.confirm}
-        />
+          <PasswordField
+            label={isGoogleAccountWithoutPassword ? 'Confirm Password' : 'Confirm New Password'}
+            name="confirmPassword"
+            autoComplete="new-password"
+            value={form.confirm}
+            onChange={setField('confirm')}
+            error={errors.confirm}
+          />
 
-        <p className="flex items-center gap-2.5 rounded-lg bg-brand-soft px-3.5 py-3 text-[13px] text-brand-dark">
-          <Info className="size-4 shrink-0" aria-hidden="true" />
-          Password must be at least 6 characters long.
-        </p>
+          <p className="flex items-center gap-2.5 rounded-lg bg-brand-soft px-3.5 py-3 text-[13px] text-brand-dark">
+            <Info className="size-4 shrink-0" aria-hidden="true" />
+            Password must be at least 6 characters long.
+          </p>
+        </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="mt-auto flex flex-wrap items-center justify-end gap-3 pt-4">
           <Notice message={notice} />
           <button
             type="submit"
@@ -529,11 +533,11 @@ export default function SettingsPage() {
         subtitle="Manage your account information, security, and preferences."
       />
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <ProfileInformation />
         <ChangePassword />
         <NotificationPreferences />
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           <LanguagePreference />
           <DeactivateAccount />
         </div>

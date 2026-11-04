@@ -50,8 +50,7 @@ export default function UserProfileDropdown({
     : user.name || 'Md. Sajjad Hossen'
 
   const displayEmail = user.email || (isB2B ? 'ajmaltravel@gmail.com' : 'sajjad.hossen@gmail.com')
-  const initial = isB2B ? (user.initials?.[0] || 'A') : (user.initials || 'SH')
-  const avatarUrl = user.avatar || '/images/users/sajjad-avatar.jpg'
+  const initial = isB2B ? (user.initials?.[0] || 'A') : (user.initials || 'U')
 
   return (
     <div
@@ -73,29 +72,17 @@ export default function UserProfileDropdown({
           <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[#0066ff] text-2xl font-bold text-white shadow-sm select-none">
             {initial}
           </div>
-        ) : (
+        ) : user.avatar ? (
           <div className="size-14 shrink-0 overflow-hidden rounded-full ring-2 ring-slate-100 shadow-sm">
             <img
-              src={avatarUrl}
+              src={user.avatar}
               alt={displayName}
               className="size-full object-cover"
-              onError={(e) => {
-                // Graceful fallback to initial if image fails
-                e.currentTarget.style.display = 'none'
-                e.currentTarget.parentElement.classList.add(
-                  'bg-gradient-to-br',
-                  'from-blue-600',
-                  'to-blue-700',
-                  'flex',
-                  'items-center',
-                  'justify-center',
-                  'text-white',
-                  'font-bold',
-                  'text-xl'
-                )
-                e.currentTarget.parentElement.innerText = initial
-              }}
             />
+          </div>
+        ) : (
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0066ff] to-[#0b2a4a] text-xl font-bold text-white ring-2 ring-slate-100 shadow-sm select-none">
+            {initial}
           </div>
         )}
 

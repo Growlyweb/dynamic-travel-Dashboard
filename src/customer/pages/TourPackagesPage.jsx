@@ -37,7 +37,7 @@ function matches(tour, filters) {
 export default function TourPackagesPage() {
   const { accessToken } = useAuth()
   const [liveBookings, setLiveBookings] = useState([])
-  const activeBookings = liveBookings.length > 0 ? liveBookings : TOUR_BOOKINGS
+  const activeBookings = accessToken ? liveBookings : TOUR_BOOKINGS
   const list = useListFilters(activeBookings, { initial: INITIAL_FILTERS, predicate: matches })
   const [selected, setSelected] = useState(null)
 
@@ -45,7 +45,7 @@ export default function TourPackagesPage() {
     if (!accessToken) return
     apiGetB2CTourBookings({}, accessToken)
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           setLiveBookings(res.data)
         }
       })

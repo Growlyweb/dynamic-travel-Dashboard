@@ -10,12 +10,13 @@ const storageKey = (userId) => `abl_customer_profile:${userId}`
 
 function buildInitialState(user) {
   const safeUser = user || {}
+  const isDemo = safeUser.id === 'usr_b2c_2045'
   const seed = {
     profile: {
       fullName: safeUser.name || 'Traveller',
       email: safeUser.email || '',
       ...splitPhone(safeUser.phone),
-      ...PROFILE_DEFAULTS,
+      ...(isDemo ? PROFILE_DEFAULTS : { dob: '', address: '', location: '' }),
       avatarUrl: safeUser.avatar || '',
     },
     preferences: PREFERENCE_DEFAULTS,
@@ -111,11 +112,12 @@ export function CustomerProfileProvider({ user, children }) {
     }
   }
 
+  const isDemo = user?.id === 'usr_b2c_2045'
   const fallbackProfile = {
     fullName: user?.name || 'Traveller',
     email: user?.email || '',
     ...splitPhone(user?.phone),
-    ...PROFILE_DEFAULTS,
+    ...(isDemo ? PROFILE_DEFAULTS : { dob: '', address: '', location: '' }),
     avatarUrl: user?.avatar || '',
   }
 
