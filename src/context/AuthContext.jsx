@@ -245,7 +245,7 @@ export function AuthProvider({ children }) {
   // ── FIREBASE GOOGLE LOGIN (B2C) ──────────────────────────────────────────
   const loginWithFirebase = useCallback(async (idToken) => {
     try {
-      const body = await apiFirebaseLogin(idToken, 'B2C')
+      const body = await apiFirebaseLogin(idToken)
       const user = mapUser(body.data?.user, body.data?.partner)
       const token = body.data?.accessToken
       if (token) {

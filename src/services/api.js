@@ -19,14 +19,15 @@ class ApiError extends Error {
 
 async function request(path, options = {}) {
   const url = `${BASE}${path}`
+  const { headers, ...restOptions } = options
 
   const res = await fetch(url, {
     credentials: 'include', // always send/receive the httpOnly refresh cookie
+    ...restOptions,
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(headers || {}),
     },
-    ...options,
   })
 
   let body
@@ -108,8 +109,8 @@ export const apiVerifyOtp = (email, otp) => post('/auth/verify-otp', { email, ot
 export const apiResendOtp = (email) => post('/auth/resend-otp', { email })
 
 /** POST /api/auth/firebase  (B2C Google sign-in) */
-export const apiFirebaseLogin = (idToken, role = 'B2C') =>
-  post('/auth/firebase', { idToken, role })
+export const apiFirebaseLogin = (idToken) =>
+  post('/auth/firebase', { idToken })
 
 /** POST /api/auth/refresh  (no body needed — refresh token is the httpOnly cookie) */
 export const apiRefresh = () => post('/auth/refresh', {})
