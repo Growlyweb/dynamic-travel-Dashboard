@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   Plus,
   Search,
@@ -16,16 +16,56 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { PICKUP_METRICS, PICKUPS_DATA } from '../../data/pickupsData'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2BPickups } from '@/services/api'
 
 export default function PassportPickupView({ onOpenNewPickupModal, onSelectPickup }) {
+  const { accessToken } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('All Status')
   const [selectedDateRange, setSelectedDateRange] = useState('')
   const [openActionId, setOpenActionId] = useState(null)
+  const [rawPickups, setRawPickups] = useState(PICKUPS_DATA)
+
+  const fetchPickups = useCallback(async () => {
+    if (!accessToken) return
+    try {
+      const res = await apiGetB2BPickups({}, accessToken)
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        const liveItems = res.data.map((p) => ({
+          id: p.id,
+          requestId: `PKP-${String(p.id).slice(-6).toUpperCase()}`,
+          applicantName: p.partner || 'Partner Order',
+          passportsCount: p.travelers || 1,
+          applications: `${p.travelers || 1} Passports`,
+          pickupAddress: p.location,
+          fullAddress: p.location,
+          requestedDate: new Date(p.pickupAt).toLocaleDateString('en-GB'),
+          preferredTime: '11:00 AM - 01:00 PM',
+          status: p.status === 'completed' ? 'Delivered' : p.status === 'in_transit' ? 'In Transit' : 'Scheduled',
+          statusBadgeColor: p.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-100' : 'bg-sky-50 text-sky-700 border-sky-200 ring-sky-100',
+          assignedRider: {
+            name: p.assignedStaff || 'Assigned Courier',
+            phone: '+880 1911-223344',
+            vehicle: 'Courier Service',
+          },
+        }))
+        const liveIds = new Set(liveItems.map((item) => item.requestId))
+        const unseededMocks = PICKUPS_DATA.filter((mock) => !liveIds.has(mock.requestId))
+        setRawPickups([...liveItems, ...unseededMocks])
+      }
+    } catch (err) {
+      console.warn('Using local pickups fallback:', err?.message)
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    fetchPickups()
+  }, [fetchPickups])
 
   // Filter Data
   const filteredPickups = useMemo(() => {
-    return PICKUPS_DATA.filter((item) => {
+    return rawPickups.filter((item) => {
       if (selectedStatus !== 'All Status' && item.status !== selectedStatus) {
         return false
       }
@@ -38,7 +78,7 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
       }
       return true
     })
-  }, [selectedStatus, searchQuery])
+  }, [rawPickups, selectedStatus, searchQuery])
 
   const handleReset = () => {
     setSearchQuery('')

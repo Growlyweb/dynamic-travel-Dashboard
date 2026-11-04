@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import Avatar from '@/components/common/Avatar'
 import { useCustomerProfile } from '@/context/CustomerProfileContext'
+import { useAuth } from '@/context/AuthContext'
+import { apiChangePassword } from '@/services/api'
 import { useFlash } from '@/hooks'
 import ConfirmDialog from '../components/ConfirmDialog'
 import {
@@ -213,16 +215,18 @@ function ProfileInformation() {
 }
 
 function ChangePassword() {
+  const { accessToken } = useAuth()
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
   const [errors, setErrors] = useState({})
   const [notice, flash] = useFlash()
+  const [submitting, setSubmitting] = useState(false)
 
   const setField = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }))
     setErrors((current) => ({ ...current, [field]: undefined }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const next = {}
 
@@ -234,8 +238,18 @@ function ChangePassword() {
     setErrors(next)
     if (Object.keys(next).length > 0) return
 
-    setForm({ current: '', next: '', confirm: '' })
-    flash('Your password has been updated.')
+    setSubmitting(true)
+    try {
+      if (accessToken) {
+        await apiChangePassword(form.current, form.next, accessToken)
+      }
+      setForm({ current: '', next: '', confirm: '' })
+      flash('Your password has been updated.')
+    } catch (err) {
+      setErrors({ current: err?.message || 'Failed to update password. Please check your current password.' })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

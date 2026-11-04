@@ -35,6 +35,10 @@ import TourPackagesPage from './customer/pages/TourPackagesPage'
 import VisaApplicationsPage from './customer/pages/VisaApplicationsPage'
 
 function ProfileRoute({ currentUser, onNavigateToStorefront, onLogout }) {
+  if (!currentUser) {
+    return <Navigate to="/login?next=%2Fb2b" replace />
+  }
+
   if (currentUser?.role === 'B2C') {
     return <Navigate to="/account" replace />
   }
@@ -246,12 +250,10 @@ function AppContent() {
             key={path}
             path={path}
             element={
-              <RequireAuth>
-                <VisaStatusView
-                  onOpenLogin={() => navigate('/login')}
-                  onNavigateToDashboard={() => navigate('/b2b')}
-                />
-              </RequireAuth>
+              <VisaStatusView
+                onOpenLogin={() => navigate('/login')}
+                onNavigateToDashboard={() => navigate('/b2b')}
+              />
             }
           />
         ))}

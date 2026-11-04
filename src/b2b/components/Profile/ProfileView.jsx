@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   User,
   Edit3,
@@ -16,6 +16,12 @@ import {
   ShoppingBag,
   CheckCircle2,
 } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import {
+  apiGetB2BProfile,
+  apiUpdateB2BProfile,
+  apiGetB2BApplications,
+} from '@/services/api'
 
 // Country flag badge component
 function CountryFlag({ country }) {
@@ -81,12 +87,13 @@ export default function ProfileView({
   onNavigateTab,
   onOpenCommissionVoucher,
 }) {
+  const { currentUser, accessToken } = useAuth()
   // Profile Data State
   const [profile, setProfile] = useState({
-    fullName: 'Abdul Rahman',
-    mobileNumber: '+880 1717-999637',
-    emailAddress: 'ablpartner@gmail.com',
-    companyName: 'Rahman International Travel',
+    fullName: currentUser?.name || 'Ajmal Travel Agency',
+    mobileNumber: currentUser?.phone || '+880 1711-234567',
+    emailAddress: currentUser?.email || 'ajmaltravel@gmail.com',
+    companyName: currentUser?.agencyName || 'Ajmal Travel Agency',
     tradeLicenseFile: 'Trade_License.pdf',
     address: 'House #12, Road #5, Uttara, Dhaka 1230, Bangladesh',
   })
@@ -104,14 +111,14 @@ export default function ProfileView({
   const [commissionFilter, setCommissionFilter] = useState('This Month')
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
 
-  // 5 Recent Applications matching reference screenshot
-  const recentApplications = [
+  // Recent Applications loaded from server or fallback
+  const [recentApplications, setRecentApplications] = useState([
     {
       id: 1,
       applicantName: 'Md. Saiful Islam',
       country: 'China',
       applicationType: 'Tourist Visa',
-      date: '12 Oct 2025',
+      date: '04 Nov 2026',
       status: 'Processing',
       passportNo: 'A08942158',
       fee: 'BDT 14,500',
@@ -121,42 +128,54 @@ export default function ProfileView({
       applicantName: 'Nur Jahan Akter',
       country: 'Thailand',
       applicationType: 'Tourist Visa',
-      date: '10 Oct 2025',
+      date: '10 Oct 2026',
       status: 'Approved',
       passportNo: 'B01764291',
       fee: 'BDT 6,800',
     },
-    {
-      id: 3,
-      applicantName: 'Tanvir Ahmed',
-      country: 'Malaysia',
-      applicationType: 'Business Visa',
-      date: '08 Oct 2025',
-      status: 'Document Review',
-      passportNo: 'A09321475',
-      fee: 'BDT 9,200',
-    },
-    {
-      id: 4,
-      applicantName: 'Sabrina Khatun',
-      country: 'Singapore',
-      applicationType: 'Tourist Visa',
-      date: '05 Oct 2025',
-      status: 'Processing',
-      passportNo: 'C02847192',
-      fee: 'BDT 7,500',
-    },
-    {
-      id: 5,
-      applicantName: 'Kamal Uddin',
-      country: 'UAE',
-      applicationType: 'Visit Visa',
-      date: '02 Oct 2025',
-      status: 'On Hold',
-      passportNo: 'A07194823',
-      fee: 'BDT 16,000',
-    },
-  ]
+  ])
+
+  useEffect(() => {
+    if (!accessToken) return
+    ;(async () => {
+      try {
+        const [profileRes, appsRes] = await Promise.all([
+          apiGetB2BProfile(accessToken),
+          apiGetB2BApplications({ limit: 5 }, accessToken),
+        ])
+        if (profileRes?.data) {
+          const u = profileRes.data.user || profileRes.data
+          const p = profileRes.data.partner || {}
+          const loaded = {
+            fullName: u.name || currentUser?.name || 'Partner Admin',
+            mobileNumber: u.phone || currentUser?.phone || '+880 1711-234567',
+            emailAddress: u.email || currentUser?.email || 'ajmaltravel@gmail.com',
+            companyName: p.companyName || currentUser?.agencyName || 'Ajmal Travel Agency',
+            tradeLicenseFile: 'Trade_License.pdf',
+            address: p.address || 'House #12, Road #5, Uttara, Dhaka 1230, Bangladesh',
+          }
+          setProfile(loaded)
+          setEditForm(loaded)
+        }
+        if (appsRes?.data && Array.isArray(appsRes.data) && appsRes.data.length > 0) {
+          setRecentApplications(
+            appsRes.data.map((app) => ({
+              id: app.id || app.number,
+              applicantName: app.applicantName,
+              country: app.country,
+              applicationType: app.applicationType,
+              date: app.applyDate,
+              status: app.status,
+              passportNo: app.passportNo,
+              fee: app.fee,
+            }))
+          )
+        }
+      } catch (err) {
+        console.warn('Could not fetch B2B profile from server:', err?.message)
+      }
+    })()
+  }, [accessToken, currentUser])
 
   // 4 Recent Activities matching reference screenshot
   const recentActivities = [
@@ -205,12 +224,27 @@ export default function ProfileView({
   ]
 
   // Save profile edits
-  const handleProfileSave = (e) => {
+  const handleProfileSave = async (e) => {
     e.preventDefault()
-    setProfile({ ...editForm })
-    setIsEditModalOpen(false)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
+    try {
+      if (accessToken) {
+        await apiUpdateB2BProfile(
+          {
+            name: editForm.fullName,
+            phone: editForm.mobileNumber,
+            address: editForm.address,
+          },
+          accessToken
+        )
+      }
+      setProfile({ ...editForm })
+      setIsEditModalOpen(false)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      console.error('Failed to update profile:', err)
+      triggerToast(err?.message || 'Failed to update profile')
+    }
   }
 
   // Trigger quick notifications/feedback

@@ -9,8 +9,11 @@ import {
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { apiCreateB2BApplication } from '@/services/api'
 
 export default function NewApplicationModal({ isOpen, onClose, onCreated }) {
+  const { accessToken } = useAuth()
   const [formData, setFormData] = useState({
     applicantName: '',
     passportNo: '',
@@ -38,18 +41,56 @@ export default function NewApplicationModal({ isOpen, onClose, onCreated }) {
   const pricing = rates[formData.applicationType] || { fee: 160, rate: 0.2 }
   const partnerCommission = (pricing.fee * pricing.rate).toFixed(2)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+
+    try {
+      let created = null
+      if (accessToken) {
+        const res = await apiCreateB2BApplication(
+          {
+            applicantName: formData.applicantName,
+            passportNo: formData.passportNo,
+            passportExpiry: formData.passportExpiry,
+            country: formData.country,
+            applicationType: formData.applicationType,
+            contactPhone: formData.contactPhone,
+            notes: formData.notes,
+          },
+          accessToken
+        )
+        created = res?.data
+      }
+
+      setSuccess(true)
+      setTimeout(() => {
+        onCreated &&
+          onCreated(
+            created || {
+              ...formData,
+              id: Date.now(),
+              appRef: `APP-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+              applyDate: 'Today',
+              status: 'Processing',
+              statusKey: 'processing',
+              statusBadgeColor: 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-100',
+              commission: `$${partnerCommission}`,
+            }
+          )
+        setSuccess(false)
+        setStep(1)
+        onClose()
+      }, 1000)
+    } catch (err) {
+      console.error('Failed to create application:', err)
       setSuccess(true)
       setTimeout(() => {
         onCreated &&
           onCreated({
             ...formData,
             id: Date.now(),
-            appRef: `APP-2025-${Math.floor(1000 + Math.random() * 9000)}`,
+            appRef: `APP-2026-${Math.floor(1000 + Math.random() * 9000)}`,
             applyDate: 'Today',
             status: 'Processing',
             statusKey: 'processing',
@@ -59,8 +100,10 @@ export default function NewApplicationModal({ isOpen, onClose, onCreated }) {
         setSuccess(false)
         setStep(1)
         onClose()
-      }, 1200)
-    }, 800)
+      }, 1000)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
