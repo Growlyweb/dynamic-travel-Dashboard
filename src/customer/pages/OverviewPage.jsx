@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import Avatar from '@/components/common/Avatar'
 import { useCustomerProfile } from '@/context/CustomerProfileContext'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2COverview } from '@/services/api'
 import DataTable from '../components/DataTable'
 import { outlineButton } from '../components/PageHeader'
 import RowAction from '../components/RowAction'
@@ -58,7 +60,30 @@ function StatCard({ label, value, to, tone }) {
 
 export default function OverviewPage() {
   const { profile } = useCustomerProfile()
+  const { accessToken } = useAuth()
   const [selectedVisa, setSelectedVisa] = useState(null)
+  const [overviewData, setOverviewData] = useState(null)
+
+  useEffect(() => {
+    if (!accessToken) return
+    apiGetB2COverview(accessToken)
+      .then((res) => {
+        if (res?.data) setOverviewData(res.data)
+      })
+      .catch((err) => {
+        console.warn('Could not load B2C overview:', err?.message)
+      })
+  }, [accessToken])
+
+  const visaList = accessToken ? (overviewData?.recentVisas || []) : (overviewData?.recentVisas?.length ? overviewData.recentVisas : VISA_APPLICATIONS)
+  const tourList = accessToken ? (overviewData?.recentTours || []) : (overviewData?.recentTours?.length ? overviewData.recentTours : TOUR_BOOKINGS)
+  const customList = accessToken ? (overviewData?.recentCustoms || []) : (overviewData?.recentCustoms?.length ? overviewData.recentCustoms : CUSTOM_TOURS)
+  const featuredCustomTour = customList[0] || (accessToken ? null : CUSTOM_TOURS[0])
+  const notificationsList = accessToken ? (overviewData?.recentUpdates || []) : (overviewData?.recentUpdates?.length ? overviewData.recentUpdates : RECENT_UPDATES)
+
+  const visaCount = overviewData?.counts?.visaApplications ?? (accessToken ? 0 : VISA_APPLICATIONS.length)
+  const tourCount = overviewData?.counts?.tourBookings ?? (accessToken ? 0 : TOUR_BOOKINGS.length)
+  const customCount = overviewData?.counts?.customTours ?? (accessToken ? 0 : CUSTOM_TOURS.length)
 
   const visaColumns = [
     { key: 'country', header: 'Country', render: (app) => <span className="font-bold text-ink">{app.country}</span> },
@@ -84,8 +109,6 @@ export default function OverviewPage() {
       ),
     },
   ]
-
-  const featuredCustomTour = CUSTOM_TOURS[0]
 
   return (
     <div className="space-y-5">
@@ -125,37 +148,41 @@ export default function OverviewPage() {
       <div className="grid gap-5 sm:grid-cols-3 xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.5fr)]">
         <StatCard
           label="Visa Applications"
-          value={VISA_APPLICATIONS.length}
+          value={visaCount}
           to="/account/visa-applications"
           tone="border-blue-200/70 bg-gradient-to-br from-[#e3eefc] to-[#edf4fd]"
         />
         <StatCard
           label="Tour Packages"
-          value={TOUR_BOOKINGS.length}
+          value={tourCount}
           to="/account/tour-packages"
           tone="border-orange-200/70 bg-gradient-to-br from-[#fdeedd] to-[#fef5ea]"
         />
         <StatCard
           label="Custom Tours"
-          value={CUSTOM_TOURS.length}
+          value={customCount}
           to="/account/custom-tours"
           tone="border-emerald-200/70 bg-gradient-to-br from-[#e1f5e9] to-[#ecf9f1]"
         />
 
         <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-card sm:col-span-3 xl:col-span-1">
           <h2 className="text-lg font-extrabold tracking-tight text-ink">Notifications</h2>
-          <ul className="mt-3 space-y-2.5">
-            {RECENT_UPDATES.map((update) => (
-              <li key={update.id} className="flex items-start gap-2.5 text-[13px]">
-                <span
-                  aria-hidden="true"
-                  className={`mt-1.5 size-2 shrink-0 rounded-full ${DOT_TONES[update.tone]}`}
-                />
-                <span className="min-w-0 flex-1 text-ink/85">{update.text}</span>
-                <span className="shrink-0 text-body">{formatDate(update.date)}</span>
-              </li>
-            ))}
-          </ul>
+          {notificationsList.length > 0 ? (
+            <ul className="mt-3 space-y-2.5">
+              {notificationsList.map((update) => (
+                <li key={update.id} className="flex items-start gap-2.5 text-[13px]">
+                  <span
+                    aria-hidden="true"
+                    className={`mt-1.5 size-2 shrink-0 rounded-full ${DOT_TONES[update.tone] || 'bg-blue-600'}`}
+                  />
+                  <span className="min-w-0 flex-1 text-ink/85">{update.text}</span>
+                  <span className="shrink-0 text-body">{formatDate(update.date)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-xs text-body">No notifications at this time.</p>
+          )}
         </section>
       </div>
 
@@ -164,7 +191,7 @@ export default function OverviewPage() {
           <DataTable
             bare
             columns={visaColumns}
-            rows={VISA_APPLICATIONS.slice(0, 3)}
+            rows={visaList.slice(0, 3)}
             rowKey={(app) => app.id}
             minWidth={820}
           />
@@ -173,60 +200,75 @@ export default function OverviewPage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <SectionCard title="My Tour Packages" to="/account/tour-packages">
-          <ul className="mt-4 divide-y divide-slate-100">
-            {TOUR_BOOKINGS.slice(0, 2).map((tour) => (
-              <li key={tour.id}>
-                <Link
-                  to="/account/tour-packages"
-                  className="group flex items-center gap-4 py-3 first:pt-0 last:pb-0"
-                >
-                  <img
-                    src={tour.image}
-                    alt=""
-                    loading="lazy"
-                    className="h-20 w-36 shrink-0 rounded-xl bg-slate-100 object-cover sm:w-44"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[17px] font-bold text-ink group-hover:text-brand">
-                      {tour.name}
-                    </p>
-                    <p className="mt-1 truncate text-[13px] text-body">
-                      {tour.destination} | {formatDate(tour.startDate)} | {tour.travelers}
-                    </p>
-                  </div>
-                  <TourStatusBadge status={tour.status} size="lg" />
-                  <ChevronRight className="size-5 shrink-0 text-brand" aria-hidden="true" />
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {tourList.length > 0 ? (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {tourList.slice(0, 2).map((tour) => (
+                <li key={tour.id}>
+                  <Link
+                    to="/account/tour-packages"
+                    className="group flex items-center gap-4 py-3 first:pt-0 last:pb-0"
+                  >
+                    <img
+                      src={tour.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80'}
+                      alt=""
+                      loading="lazy"
+                      className="h-20 w-36 shrink-0 rounded-xl bg-slate-100 object-cover sm:w-44"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[17px] font-bold text-ink group-hover:text-brand">
+                        {tour.name}
+                      </p>
+                      <p className="mt-1 truncate text-[13px] text-body">
+                        {tour.destination} | {formatDate(tour.startDate)} | {tour.travelers}
+                      </p>
+                    </div>
+                    <TourStatusBadge status={tour.status} size="lg" />
+                    <ChevronRight className="size-5 shrink-0 text-brand" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 py-6 text-center text-sm text-body">No tour packages booked yet.</p>
+          )}
         </SectionCard>
 
         <SectionCard title="My Custom Tours" to="/account/custom-tours">
-          <Link
-            to="/account/custom-tours"
-            className="group mt-4 flex flex-col gap-4 rounded-xl border border-slate-100 p-1 sm:flex-row sm:items-center"
-          >
-            <img
-              src={featuredCustomTour.image}
-              alt=""
-              loading="lazy"
-              className="h-36 w-full shrink-0 rounded-xl bg-slate-100 object-cover sm:w-40"
-            />
-            <div className="min-w-0 flex-1 pr-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[17px] font-bold text-ink group-hover:text-brand">
-                  {featuredCustomTour.name}
+          {featuredCustomTour ? (
+            <Link
+              to="/account/custom-tours"
+              className="group mt-4 flex flex-col gap-4 rounded-xl border border-slate-100 p-1 sm:flex-row sm:items-center"
+            >
+              <img
+                src={featuredCustomTour.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80'}
+                alt=""
+                loading="lazy"
+                className="h-36 w-full shrink-0 rounded-xl bg-slate-100 object-cover sm:w-40"
+              />
+              <div className="min-w-0 flex-1 pr-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[17px] font-bold text-ink group-hover:text-brand">
+                    {featuredCustomTour.name}
+                  </p>
+                  <CustomTourStatusBadge status={featuredCustomTour.status} dot={false} size="lg" />
+                </div>
+                <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-body">
+                  {featuredCustomTour.summary}
                 </p>
-                <CustomTourStatusBadge status={featuredCustomTour.status} dot={false} size="lg" />
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-body">
+                  <span className="font-semibold text-ink">{featuredCustomTour.destinations}</span>
+                  {featuredCustomTour.startDate && (
+                    <span>
+                      {formatDate(featuredCustomTour.startDate)} - {formatDate(featuredCustomTour.endDate)}
+                    </span>
+                  )}
+                  {featuredCustomTour.travelers && <span>{featuredCustomTour.travelers}</span>}
+                </div>
               </div>
-              <p className="mt-1 text-[13px] text-body">
-                {formatDate(featuredCustomTour.startDate)} | {featuredCustomTour.travelers}
-              </p>
-              <p className="mt-4 text-[13px] text-body">{featuredCustomTour.summary}</p>
-            </div>
-            <ChevronRight className="mr-2 hidden size-5 shrink-0 text-brand sm:block" aria-hidden="true" />
-          </Link>
+            </Link>
+          ) : (
+            <p className="mt-4 py-6 text-center text-sm text-body">No custom tours requested yet.</p>
+          )}
         </SectionCard>
       </div>
 

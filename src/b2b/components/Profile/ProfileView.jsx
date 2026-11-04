@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   User,
   Edit3,
@@ -16,6 +16,12 @@ import {
   ShoppingBag,
   CheckCircle2,
 } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import {
+  apiGetB2BProfile,
+  apiUpdateB2BProfile,
+  apiGetB2BApplications,
+} from '@/services/api'
 
 // Country flag badge component
 function CountryFlag({ country }) {
@@ -81,12 +87,13 @@ export default function ProfileView({
   onNavigateTab,
   onOpenCommissionVoucher,
 }) {
+  const { currentUser, accessToken } = useAuth()
   // Profile Data State
   const [profile, setProfile] = useState({
-    fullName: 'Abdul Rahman',
-    mobileNumber: '+880 1717-999637',
-    emailAddress: 'ablpartner@gmail.com',
-    companyName: 'Rahman International Travel',
+    fullName: currentUser?.name || 'Ajmal Travel Agency',
+    mobileNumber: currentUser?.phone || '+880 1711-234567',
+    emailAddress: currentUser?.email || 'ajmaltravel@gmail.com',
+    companyName: currentUser?.agencyName || 'Ajmal Travel Agency',
     tradeLicenseFile: 'Trade_License.pdf',
     address: 'House #12, Road #5, Uttara, Dhaka 1230, Bangladesh',
   })
@@ -104,14 +111,14 @@ export default function ProfileView({
   const [commissionFilter, setCommissionFilter] = useState('This Month')
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
 
-  // 5 Recent Applications matching reference screenshot
-  const recentApplications = [
+  // Recent Applications loaded from server or fallback
+  const [recentApplications, setRecentApplications] = useState([
     {
       id: 1,
       applicantName: 'Md. Saiful Islam',
       country: 'China',
       applicationType: 'Tourist Visa',
-      date: '12 Oct 2025',
+      date: '04 Nov 2026',
       status: 'Processing',
       passportNo: 'A08942158',
       fee: 'BDT 14,500',
@@ -121,42 +128,54 @@ export default function ProfileView({
       applicantName: 'Nur Jahan Akter',
       country: 'Thailand',
       applicationType: 'Tourist Visa',
-      date: '10 Oct 2025',
+      date: '10 Oct 2026',
       status: 'Approved',
       passportNo: 'B01764291',
       fee: 'BDT 6,800',
     },
-    {
-      id: 3,
-      applicantName: 'Tanvir Ahmed',
-      country: 'Malaysia',
-      applicationType: 'Business Visa',
-      date: '08 Oct 2025',
-      status: 'Document Review',
-      passportNo: 'A09321475',
-      fee: 'BDT 9,200',
-    },
-    {
-      id: 4,
-      applicantName: 'Sabrina Khatun',
-      country: 'Singapore',
-      applicationType: 'Tourist Visa',
-      date: '05 Oct 2025',
-      status: 'Processing',
-      passportNo: 'C02847192',
-      fee: 'BDT 7,500',
-    },
-    {
-      id: 5,
-      applicantName: 'Kamal Uddin',
-      country: 'UAE',
-      applicationType: 'Visit Visa',
-      date: '02 Oct 2025',
-      status: 'On Hold',
-      passportNo: 'A07194823',
-      fee: 'BDT 16,000',
-    },
-  ]
+  ])
+
+  useEffect(() => {
+    if (!accessToken) return
+    ;(async () => {
+      try {
+        const [profileRes, appsRes] = await Promise.all([
+          apiGetB2BProfile(accessToken),
+          apiGetB2BApplications({ limit: 5 }, accessToken),
+        ])
+        if (profileRes?.data) {
+          const u = profileRes.data.user || profileRes.data
+          const p = profileRes.data.partner || {}
+          const loaded = {
+            fullName: u.name || currentUser?.name || 'Partner Admin',
+            mobileNumber: u.phone || currentUser?.phone || '+880 1711-234567',
+            emailAddress: u.email || currentUser?.email || 'ajmaltravel@gmail.com',
+            companyName: p.companyName || currentUser?.agencyName || 'Ajmal Travel Agency',
+            tradeLicenseFile: 'Trade_License.pdf',
+            address: p.address || 'House #12, Road #5, Uttara, Dhaka 1230, Bangladesh',
+          }
+          setProfile(loaded)
+          setEditForm(loaded)
+        }
+        if (appsRes?.data && Array.isArray(appsRes.data)) {
+          setRecentApplications(
+            appsRes.data.map((app) => ({
+              id: app.id || app.number,
+              applicantName: app.applicantName,
+              country: app.country,
+              applicationType: app.applicationType,
+              date: app.applyDate,
+              status: app.status,
+              passportNo: app.passportNo,
+              fee: app.fee,
+            }))
+          )
+        }
+      } catch (err) {
+        console.warn('Could not fetch B2B profile from server:', err?.message)
+      }
+    })()
+  }, [accessToken, currentUser])
 
   // 4 Recent Activities matching reference screenshot
   const recentActivities = [
@@ -205,12 +224,27 @@ export default function ProfileView({
   ]
 
   // Save profile edits
-  const handleProfileSave = (e) => {
+  const handleProfileSave = async (e) => {
     e.preventDefault()
-    setProfile({ ...editForm })
-    setIsEditModalOpen(false)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
+    try {
+      if (accessToken) {
+        await apiUpdateB2BProfile(
+          {
+            name: editForm.fullName,
+            phone: editForm.mobileNumber,
+            address: editForm.address,
+          },
+          accessToken
+        )
+      }
+      setProfile({ ...editForm })
+      setIsEditModalOpen(false)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      console.error('Failed to update profile:', err)
+      triggerToast(err?.message || 'Failed to update profile')
+    }
   }
 
   // Trigger quick notifications/feedback
@@ -242,13 +276,13 @@ export default function ProfileView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* LEFT COLUMN: Profile Information Card (5 cols) */}
         <div className="lg:col-span-5 flex flex-col">
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex-1 flex flex-col justify-between">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs flex-1 flex flex-col justify-between">
             <div>
               {/* Card Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <User className="size-5 text-[#0284c7]" strokeWidth={2.2} />
-                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                     Profile Information
                   </h3>
                 </div>
@@ -259,7 +293,7 @@ export default function ProfileView({
                     setEditForm({ ...profile })
                     setIsEditModalOpen(true)
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-200/90 bg-sky-50/70 hover:bg-sky-100 text-[#0284c7] text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-sky-200/90 bg-sky-50/70 hover:bg-sky-100 text-[#0284c7] text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                 >
                   <Edit3 className="size-3.5" />
                   <span>Edit Profile</span>
@@ -269,51 +303,51 @@ export default function ProfileView({
               {/* Information Rows */}
               <div className="divide-y divide-slate-100/90 text-xs sm:text-[13px] mt-1">
                 {/* Full Name */}
-                <div className="py-3.5 flex items-start justify-between gap-4">
-                  <span className="text-slate-400 font-medium shrink-0 w-32">
+                <div className="py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                  <span className="text-slate-400 font-medium sm:w-32 shrink-0">
                     Full Name
                   </span>
-                  <span className="font-semibold text-slate-800 text-right">
+                  <span className="font-semibold text-slate-800 text-left sm:text-right">
                     {profile.fullName}
                   </span>
                 </div>
 
                 {/* Mobile Number */}
-                <div className="py-3.5 flex items-start justify-between gap-4">
-                  <span className="text-slate-400 font-medium shrink-0 w-32">
+                <div className="py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                  <span className="text-slate-400 font-medium sm:w-32 shrink-0">
                     Mobile Number
                   </span>
-                  <span className="font-semibold text-slate-800 text-right">
+                  <span className="font-semibold text-slate-800 text-left sm:text-right">
                     {profile.mobileNumber}
                   </span>
                 </div>
 
                 {/* Email Address */}
-                <div className="py-3.5 flex items-start justify-between gap-4">
-                  <span className="text-slate-400 font-medium shrink-0 w-32">
+                <div className="py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                  <span className="text-slate-400 font-medium sm:w-32 shrink-0">
                     Email Address
                   </span>
-                  <span className="font-semibold text-slate-800 text-right break-all">
+                  <span className="font-semibold text-slate-800 text-left sm:text-right break-all">
                     {profile.emailAddress}
                   </span>
                 </div>
 
                 {/* Company Name */}
-                <div className="py-3.5 flex items-start justify-between gap-4">
-                  <span className="text-slate-400 font-medium shrink-0 w-32">
+                <div className="py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                  <span className="text-slate-400 font-medium sm:w-32 shrink-0">
                     Company Name
                   </span>
-                  <span className="font-semibold text-slate-800 text-right">
+                  <span className="font-semibold text-slate-800 text-left sm:text-right">
                     {profile.companyName}
                   </span>
                 </div>
 
                 {/* Trade License */}
-                <div className="py-3.5 flex items-center justify-between gap-4">
-                  <span className="text-slate-400 font-medium shrink-0 w-32">
+                <div className="py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                  <span className="text-slate-400 font-medium sm:w-32 shrink-0">
                     Trade License
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {/* PDF Document Icon */}
                     <svg
                       className="size-4.5 text-rose-500 shrink-0"
@@ -338,11 +372,11 @@ export default function ProfileView({
                 </div>
 
                 {/* Address */}
-                <div className="py-3.5 flex items-start justify-between gap-4">
-                  <span className="text-slate-400 font-medium shrink-0 w-32">
+                <div className="py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                  <span className="text-slate-400 font-medium sm:w-32 shrink-0">
                     Address
                   </span>
-                  <span className="font-semibold text-slate-700 text-right leading-relaxed max-w-[280px]">
+                  <span className="font-semibold text-slate-700 text-left sm:text-right leading-relaxed max-w-full sm:max-w-[280px]">
                     {profile.address}
                   </span>
                 </div>
@@ -354,62 +388,62 @@ export default function ProfileView({
         {/* RIGHT COLUMN: 4 Stat Cards + Quick Actions & Commission (7 cols) */}
         <div className="lg:col-span-7 flex flex-col justify-between gap-6">
           {/* Top Row: 4 Metric Badges in a single row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
             {/* Stat 1: Total Applications */}
-            <div className="bg-[#f0f6ff]/80 border border-blue-100 rounded-2xl p-4 flex items-center gap-3.5 shadow-2xs">
-              <div className="size-11 rounded-xl bg-[#0284c7]/15 text-[#0284c7] flex items-center justify-center shrink-0">
-                <FileText className="size-5" strokeWidth={2.2} />
+            <div className="bg-[#f0f6ff]/80 border border-blue-100 rounded-2xl p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3.5 shadow-2xs">
+              <div className="size-9 sm:size-11 rounded-xl bg-[#0284c7]/15 text-[#0284c7] flex items-center justify-center shrink-0">
+                <FileText className="size-4 sm:size-5" strokeWidth={2.2} />
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-900 leading-none">
+                <span className="block text-xl sm:text-2xl font-black text-slate-900 leading-none">
                   68
                 </span>
-                <span className="block text-[11px] font-medium text-slate-500 mt-1">
+                <span className="block text-[10px] sm:text-[11px] font-medium text-slate-500 mt-1">
                   Total Applications
                 </span>
               </div>
             </div>
 
             {/* Stat 2: Approved */}
-            <div className="bg-[#f0fdf4]/80 border border-emerald-100 rounded-2xl p-4 flex items-center gap-3.5 shadow-2xs">
-              <div className="size-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Check className="size-5 stroke-[2.8]" />
+            <div className="bg-[#f0fdf4]/80 border border-emerald-100 rounded-2xl p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3.5 shadow-2xs">
+              <div className="size-9 sm:size-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Check className="size-4 sm:size-5 stroke-[2.8]" />
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-900 leading-none">
+                <span className="block text-xl sm:text-2xl font-black text-slate-900 leading-none">
                   32
                 </span>
-                <span className="block text-[11px] font-medium text-slate-500 mt-1">
+                <span className="block text-[10px] sm:text-[11px] font-medium text-slate-500 mt-1">
                   Approved
                 </span>
               </div>
             </div>
 
             {/* Stat 3: Processing */}
-            <div className="bg-[#fffbeb]/80 border border-amber-100 rounded-2xl p-4 flex items-center gap-3.5 shadow-2xs">
-              <div className="size-11 rounded-full bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
-                <Clock className="size-5 stroke-[2.2]" />
+            <div className="bg-[#fffbeb]/80 border border-amber-100 rounded-2xl p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3.5 shadow-2xs">
+              <div className="size-9 sm:size-11 rounded-full bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+                <Clock className="size-4 sm:size-5 stroke-[2.2]" />
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-900 leading-none">
+                <span className="block text-xl sm:text-2xl font-black text-slate-900 leading-none">
                   28
                 </span>
-                <span className="block text-[11px] font-medium text-slate-500 mt-1">
+                <span className="block text-[10px] sm:text-[11px] font-medium text-slate-500 mt-1">
                   Processing
                 </span>
               </div>
             </div>
 
             {/* Stat 4: On Hold */}
-            <div className="bg-[#fff1f2]/80 border border-rose-100 rounded-2xl p-4 flex items-center gap-3.5 shadow-2xs">
-              <div className="size-11 rounded-full bg-rose-500/15 text-rose-600 flex items-center justify-center shrink-0">
-                <X className="size-5 stroke-[2.5]" />
+            <div className="bg-[#fff1f2]/80 border border-rose-100 rounded-2xl p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3.5 shadow-2xs">
+              <div className="size-9 sm:size-11 rounded-full bg-rose-500/15 text-rose-600 flex items-center justify-center shrink-0">
+                <X className="size-4 sm:size-5 stroke-[2.5]" />
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-900 leading-none">
+                <span className="block text-xl sm:text-2xl font-black text-slate-900 leading-none">
                   5
                 </span>
-                <span className="block text-[11px] font-medium text-slate-500 mt-1">
+                <span className="block text-[10px] sm:text-[11px] font-medium text-slate-500 mt-1">
                   On Hold
                 </span>
               </div>
@@ -419,13 +453,13 @@ export default function ProfileView({
           {/* Bottom Row: Quick Actions Card + My Commission Card Side-by-Side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
             {/* Quick Actions Card */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
               <div>
-                <h4 className="text-sm font-bold text-slate-900 mb-3.5">
+                <h4 className="text-sm font-bold text-slate-900 mb-3 sm:mb-3.5">
                   Quick Actions
                 </h4>
 
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-2.5">
                   {/* Action 1: New Visa Application */}
                   <button
                     type="button"
@@ -433,16 +467,16 @@ export default function ProfileView({
                       if (onOpenNewApplication) onOpenNewApplication()
                       else triggerToast('Launching Visa Application Drawer...')
                     }}
-                    className="p-3 rounded-xl bg-slate-50/70 hover:bg-sky-50/60 border border-slate-100 hover:border-sky-200 transition-all text-left flex flex-col justify-between group cursor-pointer"
+                    className="p-3 rounded-xl bg-slate-50/70 hover:bg-sky-50/60 border border-slate-100 hover:border-sky-200 transition-all text-left flex flex-row xs:flex-col items-center xs:items-start justify-start xs:justify-between gap-3 xs:gap-0 group cursor-pointer"
                   >
-                    <div className="size-8 rounded-lg bg-sky-100/70 text-[#0284c7] flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                    <div className="size-8 rounded-lg bg-sky-100/70 text-[#0284c7] flex items-center justify-center shrink-0 xs:mb-2.5 group-hover:scale-105 transition-transform">
                       <FilePlus className="size-4" />
                     </div>
                     <div>
                       <span className="block text-xs font-bold text-slate-800 leading-tight">
                         New Visa Application
                       </span>
-                      <span className="block text-[10px] text-slate-400 mt-1 leading-snug">
+                      <span className="block text-[10px] text-slate-400 mt-0.5 xs:mt-1 leading-snug">
                         Submit a new application
                       </span>
                     </div>
@@ -456,16 +490,16 @@ export default function ProfileView({
                       else if (onNavigateTab) onNavigateTab('pickup')
                       else triggerToast('Opening Passport Pickup Scheduling...')
                     }}
-                    className="p-3 rounded-xl bg-slate-50/70 hover:bg-sky-50/60 border border-slate-100 hover:border-sky-200 transition-all text-left flex flex-col justify-between group cursor-pointer"
+                    className="p-3 rounded-xl bg-slate-50/70 hover:bg-sky-50/60 border border-slate-100 hover:border-sky-200 transition-all text-left flex flex-row xs:flex-col items-center xs:items-start justify-start xs:justify-between gap-3 xs:gap-0 group cursor-pointer"
                   >
-                    <div className="size-8 rounded-lg bg-sky-100/70 text-[#0284c7] flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                    <div className="size-8 rounded-lg bg-sky-100/70 text-[#0284c7] flex items-center justify-center shrink-0 xs:mb-2.5 group-hover:scale-105 transition-transform">
                       <Truck className="size-4" />
                     </div>
                     <div>
                       <span className="block text-xs font-bold text-slate-800 leading-tight">
                         Request Passport Pickup
                       </span>
-                      <span className="block text-[10px] text-slate-400 mt-1 leading-snug">
+                      <span className="block text-[10px] text-slate-400 mt-0.5 xs:mt-1 leading-snug">
                         Schedule from your office
                       </span>
                     </div>
@@ -481,16 +515,16 @@ export default function ProfileView({
                         triggerToast('Opening Commission Voucher INV-2025-0187...')
                       }
                     }}
-                    className="p-3 rounded-xl bg-slate-50/70 hover:bg-sky-50/60 border border-slate-100 hover:border-sky-200 transition-all text-left flex flex-col justify-between group cursor-pointer"
+                    className="p-3 rounded-xl bg-slate-50/70 hover:bg-sky-50/60 border border-slate-100 hover:border-sky-200 transition-all text-left flex flex-row xs:flex-col items-center xs:items-start justify-start xs:justify-between gap-3 xs:gap-0 group cursor-pointer"
                   >
-                    <div className="size-8 rounded-lg bg-sky-100/70 text-[#0284c7] flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                    <div className="size-8 rounded-lg bg-sky-100/70 text-[#0284c7] flex items-center justify-center shrink-0 xs:mb-2.5 group-hover:scale-105 transition-transform">
                       <Download className="size-4" />
                     </div>
                     <div>
                       <span className="block text-xs font-bold text-slate-800 leading-tight">
                         Download Invoice
                       </span>
-                      <span className="block text-[10px] text-slate-400 mt-1 leading-snug">
+                      <span className="block text-[10px] text-slate-400 mt-0.5 xs:mt-1 leading-snug">
                         Get commission invoice
                       </span>
                     </div>
@@ -500,7 +534,7 @@ export default function ProfileView({
             </div>
 
             {/* My Commission Card */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
               <div>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
@@ -549,7 +583,7 @@ export default function ProfileView({
                 </div>
 
                 {/* Amount & Trend */}
-                <div className="flex items-end justify-between pt-1">
+                <div className="flex flex-col xs:flex-row xs:items-end justify-between gap-3.5 pt-1">
                   <div>
                     <div className="flex items-center gap-2">
                       <div className="size-7 rounded-full bg-[#0284c7] text-white flex items-center justify-center shadow-xs">
@@ -566,7 +600,7 @@ export default function ProfileView({
                   </div>
 
                   {/* Monthly Bar Chart */}
-                  <div className="flex items-end gap-2 h-14 pb-0.5">
+                  <div className="flex items-end justify-between xs:justify-end gap-1.5 sm:gap-2 h-14 pb-0.5 w-full xs:w-auto">
                     {monthlyData.map((d) => (
                       <div
                         key={d.month}
@@ -601,10 +635,10 @@ export default function ProfileView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: Recent Applications Card (8 cols) */}
         <div className="lg:col-span-8">
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs">
             {/* Card Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
+            <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-slate-100">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                 Recent Applications
               </h3>
 
@@ -622,8 +656,8 @@ export default function ProfileView({
             </div>
 
             {/* Responsive Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <table className="w-full min-w-[620px] text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400">
                     <th className="py-3 px-2 font-semibold">#</th>
@@ -637,64 +671,72 @@ export default function ProfileView({
                 </thead>
 
                 <tbody className="divide-y divide-slate-100 text-xs sm:text-[13px]">
-                  {recentApplications.map((app) => (
-                    <tr
-                      key={app.id}
-                      className="hover:bg-slate-50/70 transition-colors"
-                    >
-                      {/* # Number */}
-                      <td className="py-3.5 px-2 font-semibold text-slate-500">
-                        {app.id}
-                      </td>
+                  {recentApplications.length > 0 ? (
+                    recentApplications.map((app) => (
+                      <tr
+                        key={app.id}
+                        className="hover:bg-slate-50/70 transition-colors"
+                      >
+                        {/* # Number */}
+                        <td className="py-3.5 px-2 font-semibold text-slate-500">
+                          {app.id}
+                        </td>
 
-                      {/* Applicant Name */}
-                      <td className="py-3.5 px-2 font-semibold text-slate-800 whitespace-nowrap">
-                        {app.applicantName}
-                      </td>
+                        {/* Applicant Name */}
+                        <td className="py-3.5 px-2 font-semibold text-slate-800 whitespace-nowrap">
+                          {app.applicantName}
+                        </td>
 
-                      {/* Country with Flag */}
-                      <td className="py-3.5 px-2 whitespace-nowrap">
-                        <CountryFlag country={app.country} />
-                      </td>
+                        {/* Country with Flag */}
+                        <td className="py-3.5 px-2 whitespace-nowrap">
+                          <CountryFlag country={app.country} />
+                        </td>
 
-                      {/* Application Type */}
-                      <td className="py-3.5 px-2 font-medium text-slate-600 whitespace-nowrap">
-                        {app.applicationType}
-                      </td>
+                        {/* Application Type */}
+                        <td className="py-3.5 px-2 font-medium text-slate-600 whitespace-nowrap">
+                          {app.applicationType}
+                        </td>
 
-                      {/* Date */}
-                      <td className="py-3.5 px-2 font-medium text-slate-500 whitespace-nowrap">
-                        {app.date}
-                      </td>
+                        {/* Date */}
+                        <td className="py-3.5 px-2 font-medium text-slate-500 whitespace-nowrap">
+                          {app.date}
+                        </td>
 
-                      {/* Status */}
-                      <td className="py-3.5 px-2 text-center whitespace-nowrap">
-                        <StatusBadge status={app.status} />
-                      </td>
+                        {/* Status */}
+                        <td className="py-3.5 px-2 text-center whitespace-nowrap">
+                          <StatusBadge status={app.status} />
+                        </td>
 
-                      {/* Action View & Menu */}
-                      <td className="py-3.5 px-2 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedApp(app)}
-                            className="px-3 py-1 rounded-md text-xs font-semibold text-[#0284c7] bg-sky-50/80 hover:bg-sky-100 transition-colors cursor-pointer"
-                          >
-                            View
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              triggerToast(`Options for ${app.applicantName}`)
-                            }
-                            className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
-                          >
-                            <MoreVertical className="size-4" />
-                          </button>
-                        </div>
+                        {/* Action View & Menu */}
+                        <td className="py-3.5 px-2 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedApp(app)}
+                              className="px-3 py-1 rounded-md text-xs font-semibold text-[#0284c7] bg-sky-50/80 hover:bg-sky-100 transition-colors cursor-pointer"
+                            >
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerToast(`Options for ${app.applicantName}`)
+                              }
+                              className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              <MoreVertical className="size-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        No recent visa applications found.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -703,10 +745,10 @@ export default function ProfileView({
 
         {/* RIGHT COLUMN: Recent Activity Card (4 cols) */}
         <div className="lg:col-span-4">
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs">
             {/* Card Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
+            <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-slate-100">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                 Recent Activity
               </h3>
 
@@ -762,25 +804,25 @@ export default function ProfileView({
       {/* EDIT PROFILE MODAL DIALOG                                */}
       {/* ======================================================== */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-dark/60 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 sm:p-7 overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy-dark/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 p-5 sm:p-7 overflow-hidden max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4 shrink-0">
               <div className="flex items-center gap-2">
                 <Edit3 className="size-5 text-[#0284c7]" />
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
                   Edit Profile Information
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 cursor-pointer"
               >
                 <X className="size-5" />
               </button>
             </div>
 
-            <form onSubmit={handleProfileSave} className="space-y-3.5">
+            <form onSubmit={handleProfileSave} className="space-y-3.5 overflow-y-auto pr-0.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Full Name
@@ -858,11 +900,11 @@ export default function ProfileView({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -882,8 +924,8 @@ export default function ProfileView({
       {/* APPLICATION DETAILS MODAL                                */}
       {/* ======================================================== */}
       {selectedApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-dark/60 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 sm:p-7">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy-dark/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-md bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 p-5 sm:p-7 max-h-[92vh] overflow-y-auto">
             <button
               type="button"
               onClick={() => setSelectedApp(null)}

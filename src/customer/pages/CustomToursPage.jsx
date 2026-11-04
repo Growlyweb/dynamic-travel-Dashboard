@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CustomTourBuilderModal from '@/components/tour-packages/CustomTourBuilderModal'
 import { useListFilters } from '@/hooks'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2CCustomTours } from '@/services/api'
 import DataTable from '../components/DataTable'
 import DetailsModal from '../components/DetailsModal'
 import FilterBar from '../components/FilterBar'
@@ -34,9 +36,50 @@ function matches(tour, filters) {
 }
 
 export default function CustomToursPage() {
-  const list = useListFilters(CUSTOM_TOURS, { initial: INITIAL_FILTERS, predicate: matches })
+  const { accessToken } = useAuth()
+  const [liveTours, setLiveTours] = useState([])
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const activeTours = accessToken ? liveTours : CUSTOM_TOURS
+  const list = useListFilters(activeTours, { initial: INITIAL_FILTERS, predicate: matches })
   const [selected, setSelected] = useState(null)
   const [isBuilderOpen, setIsBuilderOpen] = useState(false)
+
+  const fetchTours = async () => {
+    if (!accessToken) return
+    try {
+      const res = await apiGetB2CCustomTours({}, accessToken)
+      if (res?.data && Array.isArray(res.data)) {
+        setLiveTours(
+          res.data.map((c) => ({
+            id: `CT-${String(c._id).slice(-6).toUpperCase()}`,
+            _id: c._id,
+            name: `${c.destination} Custom Tour`,
+            destinations: c.destination,
+            startDate: c.startDate ? new Date(c.startDate).toISOString().slice(0, 10) : '',
+            endDate: c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : '',
+            travelers: `${c.travelers} Travelers`,
+            status:
+              c.status === 'quoted'
+                ? 'Quotation Sent'
+                : c.status === 'confirmed'
+                ? 'Confirmed'
+                : 'Pending',
+            summary: c.requirements || 'Custom itinerary',
+            image:
+              'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+          }))
+        )
+      }
+    } catch (err) {
+      console.warn('Could not load custom tours:', err?.message)
+    } finally {
+      setHasLoaded(true)
+    }
+  }
+
+  useEffect(() => {
+    fetchTours()
+  }, [accessToken])
 
   const columns = [
     {

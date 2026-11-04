@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Check,
   Copy,
@@ -10,13 +10,16 @@ import {
   Mail,
   Menu,
   Phone,
-  UserRound,
   X,
+  Search,
+  Globe,
+  ChevronDown,
+  User,
 } from 'lucide-react'
 import { NAV_LINKS, NAV_SECTIONS } from '@/constants'
 import { useAuth } from '@/context/AuthContext'
 import { useScrollSpy } from '@/hooks'
-import AccountMenu from './AccountMenu'
+import UserProfileDropdown from './UserProfileDropdown'
 
 /*
   ABL Travels — brand tokens (taken from the logo):
@@ -272,12 +275,21 @@ export default function Header({
   onLogout,
 }) {
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const menuToggleRef = useRef(null)
   const location = useLocation()
   const isVisaPage = location?.pathname === '/visa'
   const isHomePage = location?.pathname === '/'
   const isContactPage = location?.pathname === '/contact'
+
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const [currentLang, setCurrentLang] = useState('EN')
+  const searchWrapRef = useRef(null)
+  const langWrapRef = useRef(null)
 
   const { currentUser, isAuthenticated, isB2BPartner, logout } = useAuth()
   const currentSection = useScrollSpy(SPY_IDS)
@@ -293,6 +305,20 @@ export default function Header({
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Close search and lang popups on outside click
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) {
+        setSearchOpen(false)
+      }
+      if (langWrapRef.current && !langWrapRef.current.contains(e.target)) {
+        setLangMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [])
+
   // Escape closes the mobile menu and returns focus to the burger button
   useEffect(() => {
     if (!open) return undefined
@@ -306,9 +332,12 @@ export default function Header({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open])
 
-  // Any navigation should collapse the mobile menu (e.g. browser back button)
+  // Any navigation should collapse menus
   useEffect(() => {
     setOpen(false)
+    setProfileDropdownOpen(false)
+    setSearchOpen(false)
+    setLangMenuOpen(false)
   }, [location.pathname])
 
   // App-like feel: lock the background while the mobile menu is open
@@ -322,6 +351,7 @@ export default function Header({
   }, [open])
 
   const handleLogout = () => {
+    setProfileDropdownOpen(false)
     if (onLogout) {
       onLogout()
     } else {
@@ -341,11 +371,17 @@ export default function Header({
       } else if (link.label === 'Contact Us') {
         href = '/contact'
         active = isContactPage
+      } else if (link.label === 'Gallery') {
+        href = '/gallery'
+        active = location?.pathname === '/gallery'
+      } else if (link.label === 'Tour Packages') {
+        href = '/tour-packages'
+        active = location?.pathname?.startsWith('/tour-packages')
       } else if (link.label === 'Home') {
         href = '/'
         active = isHomePage && (!activeHref || activeHref === '/' || activeHref === '#home')
       } else {
-        // For section anchors like #packages, #about, #contact
+        // For section anchors like #packages, #about
         href = !isHomePage && link.href.startsWith('#') ? `/${link.href}` : link.href
         active = isHomePage && (link.href === activeHref || `/${link.href}` === activeHref)
       }
@@ -358,26 +394,8 @@ export default function Header({
         ...link,
         href,
         active,
-        hasDropdown: false,
       }
     })
-
-  if (!headerLinks.some((link) => link.label === 'Gallery')) {
-    const galleryLink = {
-      label: 'Gallery',
-      href: '/gallery',
-      active: false,
-      hasDropdown: false,
-    }
-
-    const aboutIndex = headerLinks.findIndex((link) => link.label === 'About Us')
-
-    headerLinks.splice(
-      aboutIndex === -1 ? headerLinks.length : aboutIndex,
-      0,
-      galleryLink
-    )
-  }
 
   return (
     <header
@@ -398,13 +416,19 @@ export default function Header({
             <a
               key={link.label}
               href={link.href}
+              onClick={(e) => {
+                if (link.href.startsWith('/') && !link.href.includes('#')) {
+                  e.preventDefault()
+                  navigate(link.href)
+                }
+              }}
               aria-current={link.active ? 'page' : undefined}
-              className={`group relative flex items-center whitespace-nowrap rounded py-2 text-[14px] font-medium tracking-wide transition-colors xl:text-[15px] ${focusRing} ${link.active
+              className={`group relative flex items-center gap-1.5 whitespace-nowrap rounded py-2 text-[14px] font-medium tracking-wide transition-colors xl:text-[15px] ${focusRing} ${link.active
                 ? 'text-[#0a5ec0]'
-                : 'text-[#0b2a4a]/80 hover:text-[#0a5ec0]'
+                : 'text-[#0b2a4a]/85 hover:text-[#0a5ec0]'
                 }`}
             >
-              {link.label}
+              <span>{link.label}</span>
 
               <span
                 aria-hidden="true"
@@ -417,57 +441,92 @@ export default function Header({
           ))}
         </nav>
 
-        {/* Desktop Actions - strictly one line */}
-        <div className="hidden shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap lg:flex xl:gap-3">
-          <HelpMenu />
+        {/* Desktop Actions - strictly one line matching design screenshot */}
+        <div className="hidden shrink-0 flex-nowrap items-center gap-3 whitespace-nowrap lg:flex xl:gap-5">
+          {/* 1. Quick Search Icon */}
+          <div className="relative" ref={searchWrapRef}>
+            <button
+              type="button"
+              aria-label="Search"
+              onClick={() => setSearchOpen((prev) => !prev)}
+              className="flex size-9 items-center justify-center rounded-full text-slate-700 hover:text-[#0d81f0] hover:bg-slate-100/70 transition-colors cursor-pointer"
+            >
+              <Search className="size-[20px]" />
+            </button>
 
-          <span aria-hidden="true" className="mx-1 h-6 w-px bg-[#0b2a4a]/15" />
+            {searchOpen && (
+              <div className="absolute right-0 top-full mt-2.5 w-72 rounded-2xl border border-slate-100 bg-white p-3 shadow-xl z-50 animate-fade-in">
+                <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 border border-slate-200/80 focus-within:border-[#0d81f0] focus-within:bg-white">
+                  <Search className="size-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search tours, visas..."
+                    className="w-full text-xs outline-none bg-transparent text-slate-700 placeholder:text-slate-400"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* Conditional auth: unified in storefront and B2B dashboard */}
+
+
+          {/* 3. User Profile Dropdown Trigger & Dropdown Modal */}
           {isAuthenticated ? (
-            <div className="flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
-              {isB2BPartner && (
-                isDashboardView ? (
-                  <button
-                    type="button"
-                    onClick={onNavigateToStorefront}
-                    className={`flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border border-[#0b2a4a]/20 px-5 py-2.5 text-sm font-semibold text-[#0b2a4a] transition-all hover:border-[#0d81f0] hover:text-[#0a5ec0] ${focusRing}`}
-                  >
-                    <span>Storefront</span>
-                  </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 cursor-pointer rounded-full p-0.5 transition-transform hover:opacity-95 active:scale-95 focus:outline-none"
+                aria-label="Toggle user profile menu"
+                aria-expanded={profileDropdownOpen}
+              >
+                {isB2BPartner ? (
+                  /* B2B Partner: Vibrant Blue Circle with White Letter 'A' */
+                  <div className="flex size-9.5 items-center justify-center rounded-full bg-[#0066ff] text-sm font-bold text-white shadow-sm select-none">
+                    {currentUser?.initials?.[0] || 'A'}
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={onNavigateToDashboard}
-                    className={`${primaryCta} px-5 py-2.5 text-sm ${focusRing}`}
-                  >
-                    <LayoutDashboard className="size-4" aria-hidden="true" />
-                    <span>B2B Dashboard</span>
-                  </button>
-                )
-              )}
+                  /* B2C Customer: Circular Headshot Photo or Initials Badge */
+                  currentUser?.avatar ? (
+                    <div className="size-9.5 rounded-full ring-2 ring-[#0d81f0] overflow-hidden shadow-sm">
+                      <img
+                        src={currentUser.avatar}
+                        alt={currentUser.name || 'Customer'}
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex size-9.5 items-center justify-center rounded-full bg-gradient-to-br from-[#0066ff] to-[#0b2a4a] text-xs font-bold text-white ring-2 ring-[#0d81f0] shadow-sm select-none">
+                      {currentUser?.initials || 'U'}
+                    </div>
+                  )
+                )}
+                <ChevronDown
+                  className={`size-3.5 text-slate-700 transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
 
-              {isB2BPartner ? (
-                <>
-                  {/* User name */}
-                  <span className="px-2 text-sm font-semibold text-[#0b2a4a]">
-                    {currentUser?.name?.split(' ')[0] || 'Partner'}
-                  </span>
-
-                  {/* Logout */}
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    title="Log Out"
-                    aria-label="Log out"
-                    className={`flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#0b2a4a]/15 text-slate-500 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 ${focusRing}`}
-                  >
-                    <LogOut className="size-4" aria-hidden="true" />
-                  </button>
-                </>
-              ) : (
-                <AccountMenu />
-              )}
+              {/* Exact B2B & B2C Profile Dropdown Card */}
+              <UserProfileDropdown
+                user={currentUser}
+                isB2B={isB2BPartner}
+                isOpen={profileDropdownOpen}
+                onClose={() => setProfileDropdownOpen(false)}
+                onLogout={handleLogout}
+                onNavigateToDashboard={onNavigateToDashboard}
+              />
             </div>
           ) : (
             <button
@@ -479,6 +538,9 @@ export default function Header({
               <span>Login</span>
             </button>
           )}
+
+          {/* Helpline icon */}
+          <HelpMenu />
         </div>
 
         {/* Mobile: help + menu button */}
@@ -516,7 +578,13 @@ export default function Header({
               <a
                 key={link.label}
                 href={link.href}
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  setOpen(false)
+                  if (link.href.startsWith('/') && !link.href.includes('#')) {
+                    e.preventDefault()
+                    navigate(link.href)
+                  }
+                }}
                 aria-current={link.active ? 'page' : undefined}
                 className={`flex items-center justify-between border-b border-[#0b2a4a]/10 py-4 text-base font-medium ${link.active ? 'text-[#0a5ec0]' : 'text-[#0b2a4a]'
                   }`}
@@ -549,40 +617,74 @@ export default function Header({
                   </button>
                 )}
 
-                {!isB2BPartner && (
-                  <Link
-                    to="/account"
-                    onClick={() => setOpen(false)}
-                    className={`${primaryCta} w-full px-5 py-3.5 text-sm ${focusRing}`}
-                  >
-                    <UserRound className="size-4" aria-hidden="true" />
-                    <span>My Account</span>
-                  </Link>
-                )}
-
-                <div className="flex items-center justify-between rounded-2xl border border-[#0b2a4a]/10 bg-[#f5f9fe] p-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-[#0b2a4a] text-xs font-bold text-white">
-                      {currentUser?.initials || 'U'}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-[#0b2a4a]">
-                        {currentUser?.name}
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    {isB2BPartner ? (
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#0066ff] text-xl font-bold text-white shadow-xs select-none">
+                        {currentUser?.initials?.[0] || 'A'}
+                      </div>
+                    ) : currentUser?.avatar ? (
+                      <div className="size-12 shrink-0 rounded-full ring-2 ring-[#0d81f0] overflow-hidden shadow-xs">
+                        <img
+                          src={currentUser.avatar}
+                          alt={currentUser.name || 'Customer'}
+                          className="size-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0066ff] to-[#0b2a4a] text-lg font-bold text-white ring-2 ring-[#0d81f0] shadow-xs select-none">
+                        {currentUser?.initials || 'U'}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      {isB2BPartner && (
+                        <span className="mb-0.5 inline-flex items-center rounded-md bg-[#eef5ff] px-2 py-0.5 text-[10px] font-semibold text-[#0066ff]">
+                          B2B Partner
+                        </span>
+                      )}
+                      <p className="text-sm font-bold text-[#0b2a4a] truncate">
+                        {isB2BPartner ? (currentUser?.agencyName || currentUser?.name) : currentUser?.name}
                       </p>
-                      <p className="text-xs text-slate-600">
-                        {currentUser?.role === 'B2B' ? 'B2B Partner' : 'Customer'}
+                      <p className="text-xs text-slate-500 truncate">
+                        {currentUser?.email}
                       </p>
                     </div>
                   </div>
+
+                  <div className="my-3 border-t border-slate-100" />
+
+                  {/* Name and Gmail detail rows */}
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <User className="size-3.5 text-slate-400" />
+                        <span className="font-medium text-slate-700">Name</span>
+                      </div>
+                      <span className="font-normal text-slate-600 truncate max-w-[170px]">
+                        {isB2BPartner ? (currentUser?.agencyName || currentUser?.name) : currentUser?.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <Mail className="size-3.5 text-slate-400" />
+                        <span className="font-medium text-slate-700">Gmail</span>
+                      </div>
+                      <span className="font-normal text-slate-600 truncate max-w-[170px]">
+                        {currentUser?.email}
+                      </span>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => {
                       setOpen(false)
-                      logout()
+                      handleLogout()
                     }}
-                    className="cursor-pointer text-sm font-semibold text-rose-600 hover:underline"
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#fff2f2] py-2.5 text-xs font-semibold text-[#ef4444] hover:bg-rose-100 transition-colors cursor-pointer"
                   >
-                    Log Out
+                    <LogOut className="size-3.5" />
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>

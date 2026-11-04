@@ -61,4 +61,3 @@ export function safeRedirectPath(path) {
   if (!path.startsWith('/') || path.startsWith('//') || path.startsWith('/\\')) return null
   return path
 }
-

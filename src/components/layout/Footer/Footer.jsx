@@ -105,6 +105,10 @@ function ColumnHeading({ children }) {
 const LINK_HREFS = {
   'Become a Partner': '/register-partner',
   'Tour Packages': '/tour-packages',
+  'Contact Us': '/contact',
+  'Visa Services': '/visa',
+  'China Visa Processing': '/visa',
+  'Home': '/',
 }
 
 function LinkList({ links, withArrows = [] }) {
@@ -124,6 +128,7 @@ function LinkList({ links, withArrows = [] }) {
         </li>
       ))}
     </ul>
+
   )
 }
 

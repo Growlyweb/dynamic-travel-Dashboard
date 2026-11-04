@@ -35,6 +35,10 @@ import TourPackagesPage from './customer/pages/TourPackagesPage'
 import VisaApplicationsPage from './customer/pages/VisaApplicationsPage'
 
 function ProfileRoute({ currentUser, onNavigateToStorefront, onLogout }) {
+  if (!currentUser) {
+    return <Navigate to="/login?next=%2Fb2b" replace />
+  }
+
   if (currentUser?.role === 'B2C') {
     return <Navigate to="/account" replace />
   }
@@ -240,18 +244,19 @@ function AppContent() {
           }
         />
 
-        {/* Visa status tracking — reached only from the SMS link */}
-        <Route
-          path="/visa-status/:linkRef"
-          element={
-            <RequireAuth>
+        {/* Visa status tracking — reached via SMS link or direct lookup */}
+        {['/visa-status', '/visa-status/:linkRef', '/track', '/track/:linkRef'].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
               <VisaStatusView
                 onOpenLogin={() => navigate('/login')}
                 onNavigateToDashboard={() => navigate('/b2b')}
               />
-            </RequireAuth>
-          }
-        />
+            }
+          />
+        ))}
 
         {/* 2. Dedicated Auth Pages */}
         <Route path="/login" element={<LoginPage initialMode="login" />} />

@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CountryFlag from '@/components/sections/VisaExplorer/CountryFlag'
 import { useListFilters } from '@/hooks'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2CVisaApplications } from '@/services/api'
 import DataTable from '../components/DataTable'
 import VisaDetailsModal from '../components/VisaDetailsModal'
 import FilterBar from '../components/FilterBar'
@@ -30,8 +32,39 @@ function matches(app, filters) {
 }
 
 export default function VisaApplicationsPage() {
-  const list = useListFilters(VISA_APPLICATIONS, { initial: INITIAL_FILTERS, predicate: matches })
+  const { accessToken } = useAuth()
+  const [liveApplications, setLiveApplications] = useState([])
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const activeApplications = accessToken ? liveApplications : VISA_APPLICATIONS
+  const list = useListFilters(activeApplications, { initial: INITIAL_FILTERS, predicate: matches })
   const [selected, setSelected] = useState(null)
+
+  useEffect(() => {
+    if (!accessToken) return
+    apiGetB2CVisaApplications({}, accessToken)
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          setLiveApplications(
+            res.data.map((app) => ({
+              ...app,
+              id: app.number || app.id || (app._id ? `ABL-${String(app._id).slice(-6).toUpperCase()}` : 'ABL-APP'),
+              country: app.country?.name || app.country || 'Destination',
+              countryCode: (app.country?.code || app.countryCode || 'cn').toLowerCase(),
+              visaType: app.visaType?.name || app.visaType || 'Tourist Visa',
+              appliedDate: app.createdAt || app.appliedDate || new Date().toISOString(),
+              travelDate: app.travelDate || app.createdAt || new Date().toISOString(),
+              status: app.status || 'Submitted',
+            }))
+          )
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load customer visa applications:', err?.message)
+      })
+      .finally(() => {
+        setHasLoaded(true)
+      })
+  }, [accessToken])
 
   const columns = [
     {

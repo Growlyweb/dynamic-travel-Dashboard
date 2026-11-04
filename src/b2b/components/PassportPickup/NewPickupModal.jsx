@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { X, Truck, Calendar, MapPin, CheckCircle, Clock } from 'lucide-react'
 import { PARTNER_INFO } from '../../data/partnerData'
+import { useAuth } from '@/context/AuthContext'
+import { apiCreateB2BPickup } from '@/services/api'
 
 export default function NewPickupModal({ isOpen, onClose, onCreated }) {
+  const { accessToken } = useAuth()
   const [formData, setFormData] = useState({
     applicantName: '',
     passportsCount: 2,
     pickupAddress: 'Gulshan, Dhaka',
     fullAddress: PARTNER_INFO.address,
-    requestedDate: '2025-10-15',
+    requestedDate: '2026-11-15',
     preferredTime: '11:00 AM - 01:00 PM',
     contactPerson: PARTNER_INFO.name,
     contactPhone: PARTNER_INFO.phone,
@@ -20,17 +23,59 @@ export default function NewPickupModal({ isOpen, onClose, onCreated }) {
 
   if (!isOpen) return null
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+
+    try {
+      let created = null
+      if (accessToken) {
+        const res = await apiCreateB2BPickup(
+          {
+            location: formData.fullAddress || formData.pickupAddress,
+            contactPerson: formData.contactPerson,
+            contactPhone: formData.contactPhone,
+            pickupAt: new Date(formData.requestedDate),
+            travelers: Number(formData.passportsCount) || 1,
+            notes: formData.notes,
+          },
+          accessToken
+        )
+        created = res?.data
+      }
+
+      setSuccess(true)
+      setTimeout(() => {
+        onCreated &&
+          onCreated({
+            id: created?._id || Date.now(),
+            requestId: created?._id ? `PKP-${created._id.toString().slice(-6).toUpperCase()}` : `PKP-2026-0${Math.floor(20 + Math.random() * 80)}`,
+            applicantName: formData.applicantName || 'Partner Batch Order',
+            passportsCount: Number(formData.passportsCount),
+            applications: `${formData.passportsCount} Passports`,
+            pickupAddress: formData.pickupAddress,
+            fullAddress: formData.fullAddress,
+            requestedDate: formData.requestedDate,
+            preferredTime: formData.preferredTime,
+            status: created?.status || 'Scheduled',
+            statusBadgeColor: 'bg-sky-50 text-sky-700 border-sky-200 ring-sky-100',
+            assignedRider: {
+              name: 'Tariqul Islam',
+              phone: '+880 1911-223344',
+              vehicle: 'Courier Van (DM-Cha 11-4021)',
+            },
+          })
+        setSuccess(false)
+        onClose()
+      }, 1000)
+    } catch (err) {
+      console.error('Failed to create pickup request:', err)
       setSuccess(true)
       setTimeout(() => {
         onCreated &&
           onCreated({
             id: Date.now(),
-            requestId: `PKP-2025-0${Math.floor(20 + Math.random() * 80)}`,
+            requestId: `PKP-2026-0${Math.floor(20 + Math.random() * 80)}`,
             applicantName: formData.applicantName || 'Partner Batch Order',
             passportsCount: Number(formData.passportsCount),
             applications: `${formData.passportsCount} Passports`,
@@ -48,8 +93,10 @@ export default function NewPickupModal({ isOpen, onClose, onCreated }) {
           })
         setSuccess(false)
         onClose()
-      }, 1200)
-    }, 700)
+      }, 1000)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

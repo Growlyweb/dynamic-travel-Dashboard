@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDays, Clock, FileText, Heart, Plane, Search, Trash2, Users } from 'lucide-react'
 import CountryFlag from '@/components/sections/VisaExplorer/CountryFlag'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2CSavedItems, apiRemoveB2CSavedItem } from '@/services/api'
 import PageHeader, { outlineButton, primaryButton } from '../components/PageHeader'
 import { SAVED_ITEMS } from '../data/customerData'
 
@@ -69,9 +71,45 @@ function SavedCard({ item, onRemove }) {
 }
 
 export default function SavedItemsPage() {
-  const [items, setItems] = useState(SAVED_ITEMS)
+  const { accessToken } = useAuth()
+  const [items, setItems] = useState(accessToken ? [] : SAVED_ITEMS)
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
+
+  useEffect(() => {
+    if (!accessToken) return
+    apiGetB2CSavedItems(accessToken)
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          setItems(
+            res.data.map((item) => ({
+              id: item._id,
+              kind: item.kind,
+              title: item.title,
+              place: item.place,
+              countryCode: item.countryCode,
+              image: item.image,
+              href: item.href,
+              meta: item.meta || [],
+            }))
+          )
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load saved items:', err?.message)
+      })
+  }, [accessToken])
+
+  const handleRemove = async (id) => {
+    setItems((current) => current.filter((entry) => entry.id !== id))
+    if (accessToken) {
+      try {
+        await apiRemoveB2CSavedItem(id, accessToken)
+      } catch (err) {
+        console.warn('Could not remove saved item:', err?.message)
+      }
+    }
+  }
 
   const counts = useMemo(
     () => ({
@@ -144,7 +182,7 @@ export default function SavedItemsPage() {
             <SavedCard
               key={item.id}
               item={item}
-              onRemove={(id) => setItems((current) => current.filter((entry) => entry.id !== id))}
+              onRemove={handleRemove}
             />
           ))}
         </div>

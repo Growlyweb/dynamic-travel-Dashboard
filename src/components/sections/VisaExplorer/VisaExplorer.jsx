@@ -1,6 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { Activity, ArrowRight } from 'lucide-react'
 import { DEFAULT_VISA_COUNTRY, buildCountryList, getVisaContent } from '@/constants'
 import { useCountries, useVisaSelection } from '@/hooks'
+import { apiGetPublicVisaCountries, apiGetPublicVisaTypes } from '@/services/api'
+import { slugify } from '@/utils'
 import CountrySidebar from './CountrySidebar'
 import FeeCard from './FeeCard'
 import OnRequestPanel from './OnRequestPanel'
@@ -9,11 +12,46 @@ import RequirementsCard from './RequirementsCard'
 import VisaHero from './VisaHero'
 import VisaTypeTabs from './VisaTypeTabs'
 import VisaApplyModal from './VisaApplyModal'
+import { VisaTrackModal } from '@/components/visa-status'
 
 export default function VisaExplorer() {
   const { countries, status } = useCountries()
   const { code, typeId, selectCountry, selectType } = useVisaSelection()
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
+  const [isTrackModalOpen, setIsTrackModalOpen] = useState(false)
+  const [liveCountries, setLiveCountries] = useState([])
+  const [liveVisaTypes, setLiveVisaTypes] = useState([])
+
+  // Fetch live visa countries and types from backend
+  useEffect(() => {
+    let isMounted = true
+    Promise.allSettled([
+      apiGetPublicVisaCountries(),
+      apiGetPublicVisaTypes({ limit: 100 }),
+    ]).then(([cRes, tRes]) => {
+      if (!isMounted) return
+      if (cRes.status === 'fulfilled' && cRes.value?.data) {
+        setLiveCountries(cRes.value.data)
+      }
+      if (tRes.status === 'fulfilled' && tRes.value?.data) {
+        setLiveVisaTypes(tRes.value.data)
+      }
+    })
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Allow URL hash or search param to open track modal directly (e.g. /visa#track)
+  useEffect(() => {
+    if (
+      window.location.hash === '#track' ||
+      window.location.hash === '#visa-status' ||
+      new URLSearchParams(window.location.search).get('track') === 'true'
+    ) {
+      setIsTrackModalOpen(true)
+    }
+  }, [])
 
   const countryList = useMemo(() => buildCountryList(countries), [countries])
 
@@ -22,13 +60,149 @@ export default function VisaExplorer() {
     countryList.find((item) => item.code === DEFAULT_VISA_COUNTRY) ??
     countryList[0]
 
-  const content = getVisaContent(country.code)
-  const type = content?.visaTypes.find((item) => item.id === typeId) ?? content?.visaTypes[0] ?? null
+  // Resolve content: check live backend data first, fall back to static catalog
+  const content = useMemo(() => {
+    const staticContent = getVisaContent(country.code)
+
+    // Find backend country match
+    const bCountry = liveCountries.find(
+      (c) =>
+        (c.code && c.code.toLowerCase() === country.code.toLowerCase()) ||
+        (c.name && c.name.toLowerCase() === country.name.toLowerCase())
+    )
+
+    if (bCountry && liveVisaTypes.length > 0) {
+      const matchingTypes = liveVisaTypes.filter(
+        (t) => String(t.country) === String(bCountry._id)
+      )
+
+      if (matchingTypes.length > 0) {
+        const dynamicTypes = matchingTypes.map((vt) => {
+          const typeSlug = slugify(vt.name)
+          const staticType = staticContent?.visaTypes?.find(
+            (st) => st.id === typeSlug || st.label.toLowerCase() === vt.name.toLowerCase()
+          )
+
+          return {
+            id: typeSlug,
+            label: vt.name,
+            tagline: vt.description || staticType?.tagline || `${vt.name} processing for ${country.name}`,
+            details: {
+              title: `${country.name} ${vt.name}`,
+              facts: {
+                processing: vt.processingTime || staticType?.details?.facts?.processing || '5-7 Days',
+                stay: staticType?.details?.facts?.stay || 'Up to 30 Days',
+                entry: vt.entries === 'multiple' ? 'Multiple Entry' : 'Single Entry',
+                validity: staticType?.details?.facts?.validity || 'As per approval',
+              },
+              fee: {
+                currency: vt.currency || 'BDT',
+                amount: vt.b2cPrice || staticType?.details?.fee?.amount || 0,
+                note: staticType?.details?.fee?.note || 'All Inclusive (Embassy + Service + VAT)',
+              },
+              includes: staticType?.details?.includes || [
+                'Professional document verification & review',
+                'Official embassy submission assistance',
+                'Real-time status tracking updates',
+                'Passport collection & delivery support',
+              ],
+              requirements: staticType?.details?.requirements || [
+                'Original Passport (valid for at least 6 months from travel date)',
+                'Recent photographs with white background (2 copies, 35mm × 45mm)',
+                'Completed Visa Application Form',
+                'Copy of National ID Card / Birth Certificate',
+                'Bank Statement for last 6 months (minimum balance BDT 200,000+)',
+                'Confirmed return flight booking and hotel reservation',
+                'Personal cover letter stating purpose of visit',
+              ],
+              terms: staticType?.details?.terms || [
+                'Visa fee is strictly non-refundable once submitted.',
+                'Visa issuance is at the sole discretion of the respective embassy.',
+                'Client must submit genuine and verified documentation.',
+                'Processing timelines may vary depending on embassy workload.',
+              ],
+            },
+          }
+        })
+
+        return {
+          heroImage: staticContent?.heroImage || null,
+          summary:
+            bCountry.description ||
+            staticContent?.summary ||
+            `Explore ${country.name} with our hassle-free visa application and document verification process.`,
+          visaTypes: dynamicTypes,
+        }
+      }
+    }
+
+    return staticContent
+  }, [country, liveCountries, liveVisaTypes])
+
+  const type =
+    content?.visaTypes?.find((item) => item.id === typeId) ??
+    content?.visaTypes?.[0] ??
+    null
   const details = type?.details ?? null
 
   return (
-    <section id="visa" className="scroll-mt-20 bg-tint py-10 sm:py-14">
+    <section id="visa" className="scroll-mt-20 bg-tint py-8 sm:py-12">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        {/* ======================================================== */}
+        {/* LIVE VISA STATUS ACTION BANNER (ABOVE ALL COUNTRIES & CHINA VISA BANNER) */}
+        {/* ======================================================== */}
+        <div className="mb-6 sm:mb-8 overflow-hidden rounded-2xl sm:rounded-3xl border border-blue-900/40 bg-gradient-to-r from-[#071933] via-[#0b2a4a] to-[#0c3966] p-4.5 sm:p-5 md:px-7 md:py-5 shadow-[0_12px_32px_-10px_rgba(11,42,74,0.35)] text-white">
+          <div className="flex flex-col gap-4 sm:gap-5 md:flex-row md:items-center md:justify-between">
+            {/* Left side: Live indicator + title + subtitle */}
+            <div className="flex items-start gap-3.5 sm:gap-4">
+              <div className="relative mt-0.5 flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-amber-400 shadow-inner">
+                <Activity className="size-5 sm:size-6 animate-pulse" />
+                <span className="absolute -top-1 -right-1 flex size-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+                  <span className="relative inline-flex size-3 rounded-full bg-emerald-500 border-2 border-[#0b2a4a]" />
+                </span>
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300 border border-emerald-400/30">
+                    <span className="relative flex size-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+                    </span>
+                    Live Visa Tracking
+                  </span>
+                  <span className="hidden text-xs text-white/40 sm:inline">•</span>
+                  <span className="text-xs font-medium text-white/80">
+                    Real-time embassy & passport updates
+                  </span>
+                </div>
+
+                <h3 className="mt-1 text-base sm:text-lg md:text-xl font-bold tracking-tight text-white">
+                  Track Your Visa Application In Real-Time
+                </h3>
+                <p className="mt-0.5 text-xs sm:text-[13px] text-white/70 max-w-2xl leading-relaxed">
+                  Already submitted your documents? Enter your passport number to check submission status, embassy verification, and passport delivery readiness.
+                </p>
+              </div>
+            </div>
+
+            {/* Right side: Live Visa Status Button */}
+            <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                id="btn-live-visa-status"
+                onClick={() => setIsTrackModalOpen(true)}
+                className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#ff9a00] via-[#ffaa2b] to-[#ff9a00] bg-[length:200%_auto] hover:bg-right px-6 sm:px-7 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-[#061a33] shadow-lg shadow-[#ff9a00]/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#ff9a00]/45 active:scale-95 cursor-pointer"
+              >
+                <Activity className="size-4 text-[#061a33] animate-pulse" />
+                <span>Live Visa Status</span>
+                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <CountrySidebar
             countries={countryList}
@@ -78,6 +252,12 @@ export default function VisaExplorer() {
         country={country}
         type={type}
         content={content}
+      />
+
+      {/* Live Visa Status Tracking Popup Modal */}
+      <VisaTrackModal
+        isOpen={isTrackModalOpen}
+        onClose={() => setIsTrackModalOpen(false)}
       />
     </section>
   )

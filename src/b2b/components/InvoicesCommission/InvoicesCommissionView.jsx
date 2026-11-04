@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Calendar,
   ChevronDown,
@@ -14,7 +14,17 @@ import {
   Headphones,
   Download,
   Eye,
+  Plus,
+  X,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import {
+  apiGetB2BCommissions,
+  apiGetB2BWithdrawals,
+  apiCreateB2BWithdrawal,
+} from '@/services/api'
 import {
   COMMISSION_STATS,
   COMMISSION_BREAKDOWN,
@@ -27,9 +37,71 @@ export default function InvoicesCommissionView({
   onOpenSupportModal,
   onOpenReportModal,
 }) {
+  const { accessToken } = useAuth()
   const [selectedPeriod, setSelectedPeriod] = useState('Last 6 Months')
   const [activeSubTab, setActiveSubTab] = useState('details') // 'details' or 'invoices'
   const [currentPage, setCurrentPage] = useState(1)
+
+  // Live backend data
+  const [liveCommissions, setLiveCommissions] = useState(null)
+  const [liveWithdrawals, setLiveWithdrawals] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Payout / Withdrawal modal state
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
+  const [withdrawalForm, setWithdrawalForm] = useState({
+    amount: '',
+    method: 'Bank transfer',
+    accountDetails: '',
+  })
+  const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false)
+  const [notification, setNotification] = useState(null)
+
+  const fetchData = useCallback(async () => {
+    if (!accessToken) return
+    setIsLoading(true)
+    try {
+      const [commRes, withRes] = await Promise.all([
+        apiGetB2BCommissions(accessToken).catch(() => null),
+        apiGetB2BWithdrawals({}, accessToken).catch(() => null),
+      ])
+      if (commRes?.data) setLiveCommissions(commRes.data)
+      if (withRes?.data && Array.isArray(withRes.data)) setLiveWithdrawals(withRes.data)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const handleWithdrawalSubmit = async (e) => {
+    e.preventDefault()
+    if (!withdrawalForm.amount || !withdrawalForm.accountDetails) {
+      setNotification({ type: 'error', message: 'Please specify amount and account details.' })
+      return
+    }
+    setSubmittingWithdrawal(true)
+    try {
+      await apiCreateB2BWithdrawal(
+        {
+          amount: Number(withdrawalForm.amount),
+          method: withdrawalForm.method,
+          accountDetails: withdrawalForm.accountDetails,
+        },
+        accessToken
+      )
+      setNotification({ type: 'success', message: 'Payout request submitted successfully.' })
+      setIsWithdrawModalOpen(false)
+      setWithdrawalForm({ amount: '', method: 'Bank transfer', accountDetails: '' })
+      await fetchData()
+    } catch (err) {
+      setNotification({ type: 'error', message: err?.message || 'Failed to submit withdrawal request.' })
+    } finally {
+      setSubmittingWithdrawal(false)
+    }
+  }
 
   // Sparkline SVG generator for stat cards 1 & 2
   const renderSparkline = (points, color = '#2563eb') => {
@@ -66,19 +138,85 @@ export default function InvoicesCommissionView({
     )
   }
 
-  // Donut Chart SVG calculations
-  // Total: 4850.75
-  // Visa: 2850.50 (58.76%)
-  // Tours: 1520.25 (31.34%)
-  // Other: 480.00 (9.90%)
   const radius = 54
-  const circumference = 2 * Math.PI * radius // ~339.29
+  const circumference = 2 * Math.PI * radius
   const visaLength = circumference * 0.588
   const tourLength = circumference * 0.313
   const otherLength = circumference * 0.099
 
+  // Derived figures
+  const totalEarnedDisplay =
+    liveCommissions?.totalEarned !== undefined
+      ? `BDT ${Number(liveCommissions.totalEarned).toLocaleString()}`
+      : '$4,850.75'
+
+  const availableBalanceDisplay =
+    liveCommissions?.availableBalance !== undefined
+      ? `BDT ${Number(liveCommissions.availableBalance).toLocaleString()}`
+      : '$420.00'
+
+  const totalWithdrawnDisplay =
+    liveCommissions?.totalWithdrawn !== undefined
+      ? `BDT ${Number(liveCommissions.totalWithdrawn).toLocaleString()}`
+      : '$1,200.00'
+
+  const invoiceCountDisplay =
+    liveWithdrawals?.length > 0 ? liveWithdrawals.length : INVOICES_DATA.length
+
+  // Resolved rows
+  const detailsRows =
+    liveCommissions?.items && liveCommissions.items.length > 0
+      ? liveCommissions.items.map((item, idx) => ({
+          id: item.id || idx,
+          date: new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          description: `Visa Commission - ${item.applicant || 'Applicant'}`,
+          referenceNo: item.booking || 'N/A',
+          amount: `BDT ${Number(item.amount).toLocaleString()}`,
+          status: item.status === 'earned' ? 'Credited' : item.status,
+          raw: item,
+        }))
+      : COMMISSION_DETAILS_ROWS.slice(0, 5)
+
+  const invoiceRows =
+    liveWithdrawals?.length > 0
+      ? liveWithdrawals.map((w) => ({
+          invoiceId: w.reference || `WDL-${String(w._id).slice(-6).toUpperCase()}`,
+          date: new Date(w.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          period: w.method || 'Bank Transfer',
+          amount: `BDT ${Number(w.amount).toLocaleString()}`,
+          payoutStatus: (w.status || 'pending').toUpperCase(),
+          raw: w,
+        }))
+      : INVOICES_DATA
+
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {notification && (
+        <div
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-semibold animate-fade-in ${
+            notification.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {notification.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span>{notification.message}</span>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className="text-slate-400 hover:text-slate-600 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Title & Timeframe Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -126,7 +264,7 @@ export default function InvoicesCommissionView({
           <div className="mt-4">
             <p className="text-xs font-medium text-slate-500">Total Commission Earned</p>
             <h3 className="text-2xl sm:text-[26px] font-extrabold text-[#0f172a] tracking-tight mt-1">
-              $4,850.75
+              {totalEarnedDisplay}
             </h3>
           </div>
 
@@ -149,9 +287,9 @@ export default function InvoicesCommissionView({
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-medium text-slate-500">Total Invoices</p>
+            <p className="text-xs font-medium text-slate-500">Total Invoices &amp; Payouts</p>
             <h3 className="text-2xl sm:text-[26px] font-extrabold text-[#0f172a] tracking-tight mt-1">
-              12
+              {invoiceCountDisplay}
             </h3>
           </div>
 
@@ -170,15 +308,24 @@ export default function InvoicesCommissionView({
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-medium text-slate-500">Pending Commission</p>
+            <p className="text-xs font-medium text-slate-500">Available Balance</p>
             <h3 className="text-2xl sm:text-[26px] font-extrabold text-[#0f172a] tracking-tight mt-1">
-              $420.00
+              {availableBalanceDisplay}
             </h3>
           </div>
 
-          <div className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-500">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            <span>Next Payout: Oct 25, 2025</span>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>Instant Payout</span>
+            </div>
+            <button
+              onClick={() => setIsWithdrawModalOpen(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Withdraw</span>
+            </button>
           </div>
         </div>
 
@@ -191,15 +338,15 @@ export default function InvoicesCommissionView({
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-medium text-slate-500">Last Payout</p>
+            <p className="text-xs font-medium text-slate-500">Total Withdrawn</p>
             <h3 className="text-2xl sm:text-[26px] font-extrabold text-[#0f172a] tracking-tight mt-1">
-              $1,200.00
+              {totalWithdrawnDisplay}
             </h3>
           </div>
 
           <div className="mt-4 flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Paid on Sep 25, 2025</span>
+            <span>Verified Payout History</span>
           </div>
         </div>
       </div>
@@ -209,10 +356,10 @@ export default function InvoicesCommissionView({
         {/* Left Column (Subtabs & Table) - 8 cols */}
         <div className="lg:col-span-8 space-y-4">
           {/* Sub-tab Switcher: Commission Details vs Invoices */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveSubTab('details')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeSubTab === 'details'
                   ? 'bg-[#0d2b59] text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -224,7 +371,7 @@ export default function InvoicesCommissionView({
 
             <button
               onClick={() => setActiveSubTab('invoices')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeSubTab === 'invoices'
                   ? 'bg-[#0d2b59] text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -239,7 +386,7 @@ export default function InvoicesCommissionView({
           {activeSubTab === 'details' && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                <table className="w-full min-w-[650px] text-left border-collapse text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-[#f8fafc] border-b border-slate-200 text-slate-600 font-semibold text-[11px] sm:text-xs">
                       <th className="py-3.5 px-4 font-semibold">Date</th>
@@ -252,7 +399,7 @@ export default function InvoicesCommissionView({
                   </thead>
 
                   <tbody className="divide-y divide-slate-100">
-                    {COMMISSION_DETAILS_ROWS.slice(0, 5).map((row) => (
+                    {detailsRows.map((row) => (
                       <tr
                         key={row.id}
                         className="hover:bg-slate-50/80 transition-colors group"
@@ -301,24 +448,24 @@ export default function InvoicesCommissionView({
               </div>
 
               {/* Pagination */}
-              <div className="bg-white border-t border-slate-200 px-4 py-3 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-slate-600">
-                <div>
+              <div className="bg-white border-t border-slate-200 px-3 py-3 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-slate-600">
+                <div className="text-center sm:text-left">
                   Showing <span className="font-semibold text-slate-800">1</span> to{' '}
                   <span className="font-semibold text-slate-800">5</span> of{' '}
                   <span className="font-semibold text-slate-800">12</span> entries
                 </div>
 
-                <div className="flex items-center gap-1 self-center sm:self-auto">
+                <div className="flex items-center justify-center gap-1 self-center sm:self-auto flex-wrap">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer text-xs"
                   >
                     &lt;
                   </button>
                   <button
                     onClick={() => setCurrentPage(1)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold cursor-pointer ${
+                    className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold cursor-pointer ${
                       currentPage === 1
                         ? 'bg-[#0d2b59] text-white'
                         : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -328,7 +475,7 @@ export default function InvoicesCommissionView({
                   </button>
                   <button
                     onClick={() => setCurrentPage(2)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold cursor-pointer ${
+                    className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold cursor-pointer ${
                       currentPage === 2
                         ? 'bg-[#0d2b59] text-white'
                         : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -338,7 +485,7 @@ export default function InvoicesCommissionView({
                   </button>
                   <button
                     onClick={() => setCurrentPage(3)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold cursor-pointer ${
+                    className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold cursor-pointer ${
                       currentPage === 3
                         ? 'bg-[#0d2b59] text-white'
                         : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -348,7 +495,7 @@ export default function InvoicesCommissionView({
                   </button>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(3, p + 1))}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer text-xs"
                   >
                     &gt;
                   </button>
@@ -361,7 +508,7 @@ export default function InvoicesCommissionView({
           {activeSubTab === 'invoices' && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                <table className="w-full min-w-[650px] text-left border-collapse text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-[#f8fafc] border-b border-slate-200 text-slate-600 font-semibold text-[11px] sm:text-xs">
                       <th className="py-3.5 px-4 font-semibold">Invoice No.</th>
@@ -373,8 +520,8 @@ export default function InvoicesCommissionView({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {INVOICES_DATA.map((inv) => (
-                      <tr key={inv.invoiceId} className="hover:bg-slate-50/80 transition-colors">
+                    {invoiceRows.map((inv, idx) => (
+                      <tr key={inv.invoiceId || idx} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
                           {inv.invoiceId}
                         </td>
@@ -425,7 +572,7 @@ export default function InvoicesCommissionView({
             </div>
 
             {/* Donut Chart & Legend Row */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+            <div className="flex flex-col xs:flex-row items-center justify-between gap-4 py-2">
               {/* Donut Chart SVG */}
               <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
                 <svg className="w-36 h-36 -rotate-90" viewBox="0 0 140 140">
@@ -556,6 +703,93 @@ export default function InvoicesCommissionView({
           </div>
         </div>
       </div>
+
+      {/* Payout / Withdrawal Request Modal */}
+      {isWithdrawModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="bg-[#0d2b59] px-5 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2.5">
+                <Wallet className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold">Request Commission Payout</h3>
+              </div>
+              <button
+                onClick={() => setIsWithdrawModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleWithdrawalSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Amount (BDT) *
+                </label>
+                <input
+                  type="number"
+                  min="100"
+                  step="100"
+                  required
+                  value={withdrawalForm.amount}
+                  onChange={(e) => setWithdrawalForm({ ...withdrawalForm, amount: e.target.value })}
+                  placeholder="e.g. 5000"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-[#0066cc] focus:ring-1 focus:ring-[#0066cc] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Payout Method *
+                </label>
+                <select
+                  value={withdrawalForm.method}
+                  onChange={(e) => setWithdrawalForm({ ...withdrawalForm, method: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-[#0066cc] focus:ring-1 focus:ring-[#0066cc] outline-none bg-white cursor-pointer"
+                >
+                  <option value="Bank transfer">Bank Transfer</option>
+                  <option value="bKash">bKash (Merchant / Personal)</option>
+                  <option value="Nagad">Nagad</option>
+                  <option value="Wise">Wise</option>
+                  <option value="Cash">Cash at Office</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Account Details / Instructions *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={withdrawalForm.accountDetails}
+                  onChange={(e) => setWithdrawalForm({ ...withdrawalForm, accountDetails: e.target.value })}
+                  placeholder="Account Name, Account Number, Branch / Routing No., or bKash wallet number..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-[#0066cc] focus:ring-1 focus:ring-[#0066cc] outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsWithdrawModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingWithdrawal}
+                  className="px-5 py-2 rounded-xl bg-[#0066cc] hover:bg-[#004f9e] text-xs font-bold text-white flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {submittingWithdrawal && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Submit Request</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
