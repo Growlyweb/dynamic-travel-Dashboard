@@ -135,7 +135,11 @@ export const apiResetPassword = (email, token, newPassword) =>
 
 /** POST /api/auth/change-password */
 export const apiChangePassword = (currentPassword, newPassword, token) =>
-  post('/auth/change-password', { currentPassword, newPassword }, authHeaders(token))
+  post(
+    '/auth/change-password',
+    { ...(currentPassword ? { currentPassword } : {}), newPassword },
+    authHeaders(token)
+  )
 
 // ============================================================
 // B2B PARTNER ENDPOINTS

@@ -97,6 +97,12 @@ function clearSession() {
 function mapUser(backendUser, partner = null) {
   const name = backendUser?.name || backendUser?.email || 'User'
   const role = (backendUser?.role || 'B2C').toUpperCase()
+  const authProvider = backendUser?.authProvider || (backendUser?.firebaseUid ? 'firebase' : 'local')
+  const hasPassword =
+    typeof backendUser?.hasPassword === 'boolean'
+      ? backendUser.hasPassword
+      : authProvider !== 'firebase'
+
   return {
     id: backendUser?._id || backendUser?.id,
     name,
@@ -105,6 +111,8 @@ function mapUser(backendUser, partner = null) {
     phone: backendUser?.phone || null,
     avatar: backendUser?.avatar || null,
     isEmailVerified: backendUser?.isEmailVerified ?? backendUser?.emailVerified ?? false,
+    authProvider,
+    hasPassword,
     initials: name
       .split(' ')
       .map((n) => n[0])
@@ -137,6 +145,15 @@ export function AuthProvider({ children }) {
     setAccessToken(token)
     saveSession(user, token)
   }, [])
+
+  const updateCurrentUser = useCallback((patch) => {
+    setCurrentUser((prev) => {
+      if (!prev) return prev
+      const updated = { ...prev, ...patch }
+      saveSession(updated, accessToken)
+      return updated
+    })
+  }, [accessToken])
 
   // ── Refresh access token using the httpOnly cookie ─────────────────────────
   const refresh = useCallback(async () => {
@@ -356,6 +373,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     accessToken,
+    updateCurrentUser,
     isAuthenticated: Boolean(currentUser),
     isB2BPartner: currentUser?.role === 'B2B',
     isAdmin: currentUser?.role === 'ADMIN',
