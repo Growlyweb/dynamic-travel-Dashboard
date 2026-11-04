@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useAuth, DEMO_B2B_PARTNER, DEMO_B2C_CUSTOMER } from '../context/AuthContext'
 import { safeRedirectPath } from '@/utils'
+import { signInWithGooglePopup } from '../services/firebase'
 
 /**
  * High-fidelity vector SVG logo for ABL Travels
@@ -160,18 +161,17 @@ const CURRENT_YEAR = new Date().getFullYear()
 export default function LoginPage({ initialMode = 'login' }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login } = useAuth()
+  const { login, loginWithFirebase, register, verifyOtp, resendOtp, forgotPassword } = useAuth()
 
   // ?next= carries the page the visitor came for (the visa status link); only paths on this site are followed
   const nextPath = safeRedirectPath(new URLSearchParams(location.search).get('next'))
-  const destinationFor = (role) =>
-    nextPath || (role === 'B2B' ? '/b2b' : location.state?.from || (role === 'B2C' ? '/account' : '/'))
+  const destinationFor = (role) => nextPath || location.state?.from || (role === 'B2B' ? '/b2b' : '/account')
 
   // State
   const [activeTab, setActiveTab] = useState('customer') // 'customer' | 'partner'
   const [authMode, setAuthMode] = useState(initialMode) // 'login' | 'register'
-  const [emailOrPhone, setEmailOrPhone] = useState(DEMO_B2C_CUSTOMER.email)
-  const [password, setPassword] = useState('CustomerPass2025!')
+  const [emailOrPhone, setEmailOrPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
@@ -181,6 +181,14 @@ export default function LoginPage({ initialMode = 'login' }) {
   const [showForgotModal, setShowForgotModal] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
+
+  // OTP verification state
+  const [otpMode, setOtpMode] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [otpResending, setOtpResending] = useState(false)
+  const [otpResent, setOtpResent] = useState(false)
 
   // Carousel banner active slide & hover pause
   const [activeSlide, setActiveSlide] = useState(0)
@@ -202,13 +210,9 @@ export default function LoginPage({ initialMode = 'login' }) {
   const handleTabSwitch = (tab) => {
     setActiveTab(tab)
     setErrorMessage('')
-    if (tab === 'customer') {
-      setEmailOrPhone(DEMO_B2C_CUSTOMER.email)
-      setPassword('CustomerPass2025!')
-    } else {
-      setEmailOrPhone(DEMO_B2B_PARTNER.email)
-      setPassword('PartnerPass2025!')
-    }
+    setOtpMode(false)
+    setEmailOrPhone('')
+    setPassword('')
   }
 
   // Handle Login submission
@@ -226,35 +230,30 @@ export default function LoginPage({ initialMode = 'login' }) {
     }
 
     setIsLoading(true)
-
-    // Authentic slight latency for feedback
-    await new Promise((r) => setTimeout(r, 600))
-
     const role = activeTab === 'partner' ? 'B2B' : 'B2C'
     const res = await login({
-      email: emailOrPhone,
+      email: emailOrPhone.trim(),
       password,
       role,
     })
-
     setIsLoading(false)
 
     if (res.success) {
       setLoginSuccess({
         name: res.user.name,
-        role,
+        role: res.role || role,
       })
-
-      // Redirect after showing positive feedback
-      setTimeout(() => {
-        navigate(destinationFor(role))
-      }, 700)
+      setTimeout(() => navigate(destinationFor(res.role || role)), 700)
+    } else if (res.needsVerification) {
+      setPendingEmail(res.email || emailOrPhone.trim())
+      setOtpMode(true)
+      setErrorMessage('')
     } else {
-      setErrorMessage('Authentication failed. Please verify your credentials.')
+      setErrorMessage(res.message || 'Authentication failed. Please verify your credentials.')
     }
   }
 
-  // Handle Register submission
+  // Handle Register submission (Customer)
   const handleRegister = async (e) => {
     e.preventDefault()
     setErrorMessage('')
@@ -264,29 +263,93 @@ export default function LoginPage({ initialMode = 'login' }) {
     }
 
     setIsLoading(true)
-    await new Promise((r) => setTimeout(r, 700))
-    const role = activeTab === 'partner' ? 'B2B' : 'B2C'
-
-    const res = await login({
-      email: emailOrPhone,
+    const res = await register({
+      name: fullName.trim(),
+      email: emailOrPhone.trim(),
       password,
-      role,
     })
-
     setIsLoading(false)
+
     if (res.success) {
-      setLoginSuccess({
-        name: fullName || res.user.name,
-        role,
-      })
-      setTimeout(() => {
-        navigate(destinationFor(role))
-      }, 800)
+      setPendingEmail(emailOrPhone.trim())
+      setOtpMode(true)
+      setErrorMessage('')
+    } else {
+      setErrorMessage(res.message || 'Registration failed. Please try again.')
     }
   }
 
-  // Handle Quick Demo Social Login
+  // OTP verify handler
+  const handleOtpVerify = async (e) => {
+    e.preventDefault()
+    setOtpError('')
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setOtpError('Please enter the 6-digit verification code.')
+      return
+    }
+    setIsLoading(true)
+    const res = await verifyOtp(pendingEmail, otpCode.trim())
+    setIsLoading(false)
+    if (res.success) {
+      const role = activeTab === 'partner' ? 'B2B' : 'B2C'
+      setLoginSuccess({
+        name: res.user?.name || fullName || pendingEmail,
+        role,
+      })
+      setTimeout(() => navigate(destinationFor(role)), 700)
+    } else {
+      setOtpError(res.message || 'Invalid or expired verification code.')
+    }
+  }
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    setOtpResent(false)
+    setOtpResending(true)
+    const res = await resendOtp(pendingEmail)
+    setOtpResending(false)
+    if (res.success) {
+      setOtpResent(true)
+      setTimeout(() => setOtpResent(false), 5000)
+    } else {
+      setOtpError(res.message || 'Failed to resend code.')
+    }
+  }
+
+  // Handle Google OAuth via Firebase for Customer (B2C)
+  const handleGoogleLogin = async () => {
+    setIsLoading(true)
+    setErrorMessage('')
+    try {
+      const { idToken, user } = await signInWithGooglePopup()
+      const res = await loginWithFirebase(idToken)
+      if (res.success) {
+        setLoginSuccess({
+          name: res.user?.name || user?.displayName || 'Google User',
+          role: 'B2C',
+        })
+        setTimeout(() => navigate(destinationFor('B2C')), 700)
+      } else {
+        setErrorMessage(res.message || 'Google authentication was rejected by the server.')
+      }
+    } catch (err) {
+      if (err.code === 'auth/popup-closed-by-user') {
+        setErrorMessage('Google sign-in popup was closed.')
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        // user clicked multiple times or dismissed
+      } else {
+        setErrorMessage(err.message || 'Google authentication failed.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle Quick Demo Social Login (Fallback)
   const handleSocialLogin = async (provider) => {
+    if (provider === 'Google' && activeTab === 'customer') {
+      return handleGoogleLogin()
+    }
     setIsLoading(true)
     await new Promise((r) => setTimeout(r, 450))
     const role = activeTab === 'partner' ? 'B2B' : 'B2C'
@@ -301,9 +364,7 @@ export default function LoginPage({ initialMode = 'login' }) {
         name: res.user.name,
         role,
       })
-      setTimeout(() => {
-        navigate(destinationFor(role))
-      }, 700)
+      setTimeout(() => navigate(destinationFor(role)), 700)
     }
   }
 
@@ -765,6 +826,78 @@ export default function LoginPage({ initialMode = 'login' }) {
                   <div className="h-full bg-primary rounded-full animate-pulse w-full" />
                 </div>
               </div>
+            ) : otpMode ? (
+              <div className="mt-5 space-y-4 animate-fade-in">
+                <div className="text-center">
+                  <div className="size-14 rounded-2xl bg-sky-50 text-[#2563eb] flex items-center justify-center mx-auto mb-3">
+                    <Mail className="size-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Verify Your Email</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                    Enter the 6-digit code sent to <span className="font-semibold text-slate-800">{pendingEmail}</span>.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-center">
+                    {otpError}
+                  </div>
+                )}
+
+                {otpResent && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium text-center">
+                    A new verification code was emailed!
+                  </div>
+                )}
+
+                <form onSubmit={handleOtpVerify} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-center">
+                      Verification Code
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      autoFocus
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="000000"
+                      className="w-full text-center tracking-[0.5em] text-2xl font-bold py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-[#2563eb]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading || otpCode.length !== 6}
+                    className="w-full py-3 sm:py-3.5 px-6 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#f97316] hover:from-[#ea580c] hover:to-[#f97316] text-white font-bold text-sm sm:text-base shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify & Continue'}
+                  </button>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpMode(false)
+                        setOtpError('')
+                      }}
+                      className="text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
+                    >
+                      ← Back to Login
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={otpResending}
+                      onClick={handleResendOtp}
+                      className="text-[#2563eb] hover:underline font-semibold cursor-pointer disabled:opacity-60"
+                    >
+                      {otpResending ? 'Sending...' : 'Resend Code'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             ) : (
               /* Main Form */
               <form
@@ -918,68 +1051,49 @@ export default function LoginPage({ initialMode = 'login' }) {
                   )}
                 </button>
 
-                {/* Divider OR */}
-                <div className="relative my-4 flex items-center justify-center">
-                  <div className="border-t border-slate-200 w-full" />
-                  <span className="bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 shrink-0">
-                    OR
-                  </span>
-                  <div className="border-t border-slate-200 w-full" />
-                </div>
+                {/* Social Login: Customer Login keeps Google only (Facebook & Apple removed); Partner Login has all social logins removed */}
+                {activeTab === 'customer' && (
+                  <>
+                    {/* Divider OR */}
+                    <div className="relative my-4 flex items-center justify-center">
+                      <div className="border-t border-slate-200 w-full" />
+                      <span className="bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 shrink-0">
+                        OR
+                      </span>
+                      <div className="border-t border-slate-200 w-full" />
+                    </div>
 
-                {/* 3 Outlined Social Buttons */}
-                <div className="space-y-2">
-                  {/* Google */}
-                  <button
-                    type="button"
-                    onClick={() => handleSocialLogin('Google')}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
-                  >
-                    <svg className="size-4 shrink-0" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      />
-                    </svg>
-                    <span>Continue with Google</span>
-                  </button>
-
-                  {/* Facebook */}
-                  <button
-                    type="button"
-                    onClick={() => handleSocialLogin('Facebook')}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
-                  >
-                    <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="#1877F2">
-                      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
-                    </svg>
-                    <span>Continue with Facebook</span>
-                  </button>
-
-                  {/* Apple */}
-                  <button
-                    type="button"
-                    onClick={() => handleSocialLogin('Apple')}
-                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
-                  >
-                    <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="#000000">
-                      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                    </svg>
-                    <span>Continue with Apple</span>
-                  </button>
-                </div>
+                    {/* Google Button */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => handleGoogleLogin()}
+                        disabled={isLoading}
+                        className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-2.5 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <svg className="size-4 shrink-0" viewBox="0 0 24 24">
+                          <path
+                            fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                          />
+                        </svg>
+                        <span>Continue with Google</span>
+                      </button>
+                    </div>
+                  </>
+                )}
 
                 {/* Footer Switcher */}
                 <div className="pt-2 text-center text-xs text-slate-500">
@@ -1082,8 +1196,12 @@ export default function LoginPage({ initialMode = 'login' }) {
               </div>
             ) : (
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault()
+                  if (!forgotEmail.trim()) return
+                  setIsLoading(true)
+                  await forgotPassword(forgotEmail.trim())
+                  setIsLoading(false)
                   setForgotSent(true)
                 }}
                 className="mt-5 space-y-4"
@@ -1112,6 +1230,8 @@ export default function LoginPage({ initialMode = 'login' }) {
           </div>
         </div>
       )}
+
+
     </div>
   )
 }

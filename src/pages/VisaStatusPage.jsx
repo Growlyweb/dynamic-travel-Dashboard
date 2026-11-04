@@ -107,7 +107,8 @@ function StatusLookup({ linkRef }) {
 }
 
 export default function VisaStatusPage() {
-  const { linkRef } = useParams()
+  const { linkRef: paramRef } = useParams()
+  const linkRef = paramRef || 'demo-approved'
   usePrivatePage('Track Your Visa Status | ABL Travels')
 
   return (

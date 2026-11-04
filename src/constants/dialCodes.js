@@ -12,8 +12,9 @@ export const DIAL_CODES = [
 ]
 
 export function splitPhone(phone = '') {
-  const match = DIAL_CODES.find((entry) => phone.startsWith(entry.dial))
+  const safePhone = typeof phone === 'string' ? phone : ''
+  const match = DIAL_CODES.find((entry) => safePhone.startsWith(entry.dial))
   return match
-    ? { dialCode: match.dial, phone: phone.slice(match.dial.length).trim() }
-    : { dialCode: DIAL_CODES[0].dial, phone: phone.trim() }
+    ? { dialCode: match.dial, phone: safePhone.slice(match.dial.length).trim() }
+    : { dialCode: DIAL_CODES[0].dial, phone: safePhone.trim() }
 }

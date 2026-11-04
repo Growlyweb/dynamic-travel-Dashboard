@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   Plus,
   Search,
@@ -16,16 +16,56 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { PICKUP_METRICS, PICKUPS_DATA } from '../../data/pickupsData'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2BPickups } from '@/services/api'
 
 export default function PassportPickupView({ onOpenNewPickupModal, onSelectPickup }) {
+  const { accessToken } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('All Status')
   const [selectedDateRange, setSelectedDateRange] = useState('')
   const [openActionId, setOpenActionId] = useState(null)
+  const [rawPickups, setRawPickups] = useState(PICKUPS_DATA)
+
+  const fetchPickups = useCallback(async () => {
+    if (!accessToken) return
+    try {
+      const res = await apiGetB2BPickups({}, accessToken)
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        const liveItems = res.data.map((p) => ({
+          id: p.id,
+          requestId: `PKP-${String(p.id).slice(-6).toUpperCase()}`,
+          applicantName: p.partner || 'Partner Order',
+          passportsCount: p.travelers || 1,
+          applications: `${p.travelers || 1} Passports`,
+          pickupAddress: p.location,
+          fullAddress: p.location,
+          requestedDate: new Date(p.pickupAt).toLocaleDateString('en-GB'),
+          preferredTime: '11:00 AM - 01:00 PM',
+          status: p.status === 'completed' ? 'Delivered' : p.status === 'in_transit' ? 'In Transit' : 'Scheduled',
+          statusBadgeColor: p.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-100' : 'bg-sky-50 text-sky-700 border-sky-200 ring-sky-100',
+          assignedRider: {
+            name: p.assignedStaff || 'Assigned Courier',
+            phone: '+880 1911-223344',
+            vehicle: 'Courier Service',
+          },
+        }))
+        const liveIds = new Set(liveItems.map((item) => item.requestId))
+        const unseededMocks = PICKUPS_DATA.filter((mock) => !liveIds.has(mock.requestId))
+        setRawPickups([...liveItems, ...unseededMocks])
+      }
+    } catch (err) {
+      console.warn('Using local pickups fallback:', err?.message)
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    fetchPickups()
+  }, [fetchPickups])
 
   // Filter Data
   const filteredPickups = useMemo(() => {
-    return PICKUPS_DATA.filter((item) => {
+    return rawPickups.filter((item) => {
       if (selectedStatus !== 'All Status' && item.status !== selectedStatus) {
         return false
       }
@@ -38,7 +78,7 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
       }
       return true
     })
-  }, [selectedStatus, searchQuery])
+  }, [rawPickups, selectedStatus, searchQuery])
 
   const handleReset = () => {
     setSearchQuery('')
@@ -86,20 +126,20 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
       </div>
 
       {/* Summary Metrics Cards (Row of 4) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {PICKUP_METRICS.map((metric) => (
           <div
             key={metric.id}
-            className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 flex items-center gap-4 shadow-xs hover:shadow-sm transition-shadow"
+            className="bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-5 flex items-center gap-3 sm:gap-4 shadow-xs hover:shadow-sm transition-shadow"
           >
             <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${metric.iconColor}`}
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 ${metric.iconColor}`}
             >
               {getMetricIcon(metric.type)}
             </div>
             <div>
-              <p className="text-xs font-medium text-slate-500">{metric.title}</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#0f172a] tracking-tight mt-0.5">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500">{metric.title}</p>
+              <h3 className="text-xl sm:text-3xl font-extrabold text-[#0f172a] tracking-tight mt-0.5">
                 {metric.value}
               </h3>
             </div>
@@ -113,9 +153,9 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
         <div className="lg:col-span-8 xl:col-span-9 space-y-4">
           {/* Filter Bar */}
           <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs">
-            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-2.5 sm:gap-3 items-center">
               {/* Search input */}
-              <div className="flex-1 min-w-[200px] relative">
+              <div className="col-span-1 sm:col-span-2 md:col-span-5 relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
@@ -127,7 +167,7 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
               </div>
 
               {/* Status Dropdown */}
-              <div className="w-full md:w-36 relative shrink-0">
+              <div className="col-span-1 sm:col-span-1 md:col-span-3 relative">
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
@@ -143,7 +183,7 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
               </div>
 
               {/* Date Range Dropdown */}
-              <div className="w-full md:w-44 relative shrink-0">
+              <div className="col-span-1 sm:col-span-1 md:col-span-3 relative">
                 <select
                   value={selectedDateRange}
                   onChange={(e) => setSelectedDateRange(e.target.value)}
@@ -158,7 +198,7 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
               </div>
 
               {/* Reset */}
-              <div className="shrink-0 flex justify-end">
+              <div className="col-span-1 sm:col-span-2 md:col-span-1 flex justify-start sm:justify-end">
                 <button
                   onClick={handleReset}
                   className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-slate-600 hover:text-[#0066cc] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
@@ -174,7 +214,7 @@ export default function PassportPickupView({ onOpenNewPickupModal, onSelectPicku
           {/* Table */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs sm:text-[13px]">
+              <table className="w-full min-w-[760px] text-left border-collapse text-xs sm:text-[13px]">
                 <thead>
                   <tr className="bg-[#f8fafc] border-b border-slate-200 text-slate-600 font-semibold text-[11px] sm:text-xs">
                     <th className="py-3.5 px-2.5 sm:px-3 w-8 sm:w-10 text-center whitespace-nowrap">#</th>

@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useListFilters } from '@/hooks'
+import { useAuth } from '@/context/AuthContext'
+import { apiGetB2CTourBookings } from '@/services/api'
 import DataTable from '../components/DataTable'
 import DetailsModal from '../components/DetailsModal'
 import FilterBar from '../components/FilterBar'
@@ -33,8 +35,24 @@ function matches(tour, filters) {
 }
 
 export default function TourPackagesPage() {
-  const list = useListFilters(TOUR_BOOKINGS, { initial: INITIAL_FILTERS, predicate: matches })
+  const { accessToken } = useAuth()
+  const [liveBookings, setLiveBookings] = useState([])
+  const activeBookings = liveBookings.length > 0 ? liveBookings : TOUR_BOOKINGS
+  const list = useListFilters(activeBookings, { initial: INITIAL_FILTERS, predicate: matches })
   const [selected, setSelected] = useState(null)
+
+  useEffect(() => {
+    if (!accessToken) return
+    apiGetB2CTourBookings({}, accessToken)
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setLiveBookings(res.data)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load tour bookings:', err?.message)
+      })
+  }, [accessToken])
 
   const columns = [
     {

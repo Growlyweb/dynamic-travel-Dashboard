@@ -25,6 +25,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [loginSuccess, setLoginSuccess] = useState(null) // null | { name, role }
 
   // Sync default tab when modal opens
@@ -59,6 +60,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     setLoginSuccess(null)
+    setErrorMessage('')
     if (tab === 'b2b') {
       setEmail(DEMO_B2B_PARTNER.email)
       setPassword('PartnerPass2025!')
@@ -70,10 +72,8 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
+    setErrorMessage('')
     setIsLoading(true)
-
-    // Simulate authentic network latency for realism
-    await new Promise((res) => setTimeout(res, 500))
 
     const role = activeTab === 'b2b' ? 'B2B' : 'B2C'
     const res = await login({ email, password, role })
@@ -85,13 +85,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
         role,
       })
 
-      // Redirect after showing positive feedback
       setTimeout(() => {
         onClose()
         if (role === 'B2B' && onRedirectToDashboard) {
           onRedirectToDashboard()
         }
       }, 700)
+    } else {
+      setErrorMessage(res.message || 'Invalid email or password.')
     }
   }
 
@@ -146,8 +147,12 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
 
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3">
-            <span className="relative flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-md">
-              <Plane className="size-5 text-white" strokeWidth={2.4} />
+            <span className="relative flex size-11 items-center justify-center rounded-2xl bg-white shadow-md p-1 border border-white/20">
+              <img
+                src="/company_logo.png"
+                alt="ABL Travels Logo"
+                className="w-full h-full object-contain"
+              />
             </span>
             <div>
               <span className="text-xl font-extrabold tracking-tight">
@@ -266,8 +271,8 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
                       </span>
                       <span className="block text-[11px] text-slate-500">
                         {activeTab === 'b2b'
-                          ? 'Abdur Rahman (Green Bengal Tours & Travels)'
-                          : 'Tanvir Hossain (Personal Traveler)'}
+                          ? 'Ajmal Travel Agency (B2B Partner)'
+                          : 'Md. Sajjad Hossen (Customer)'}
                       </span>
                     </div>
                   </div>
@@ -287,6 +292,11 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'b2b', onRedir
               </div>
 
               {/* Input Form */}
+              {errorMessage && (
+                <div className="mb-4 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-center">
+                  {errorMessage}
+                </div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
